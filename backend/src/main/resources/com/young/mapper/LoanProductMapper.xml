@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.LoanProductMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO loan_product
+            (name, type, annual_rate, min_amount, max_amount, min_term, max_term, description, status, create_time, update_time)
+        VALUES
+            (#{name}, #{type}, #{annualRate}, #{minAmount}, #{maxAmount}, #{minTerm}, #{maxTerm}, #{description}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE loan_product
+        SET name        = #{name},
+            type        = #{type},
+            annual_rate = #{annualRate},
+            min_amount  = #{minAmount},
+            max_amount  = #{maxAmount},
+            min_term    = #{minTerm},
+            max_term    = #{maxTerm},
+            description = #{description},
+            status      = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="com.young.pojo.LoanProduct">
+        SELECT * FROM loan_product WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultType="com.young.pojo.LoanProduct">
+        SELECT * FROM loan_product ORDER BY create_time DESC
+    </select>
+
+    <select id="selectActive" resultType="com.young.pojo.LoanProduct">
+        SELECT * FROM loan_product WHERE status = 1 ORDER BY create_time DESC
+    </select>
+
+</mapper>

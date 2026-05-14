@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.UnfreezeApplicationMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO unfreeze_application (user_id, reason, status, create_time, update_time)
+        VALUES (#{userId}, #{reason}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE unfreeze_application 
+        SET status = #{status}, admin_id = #{adminId}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="com.young.pojo.UnfreezeApplication">
+        SELECT * FROM unfreeze_application WHERE id = #{id}
+    </select>
+    
+    <select id="selectLatestPendingByUserId" resultType="com.young.pojo.UnfreezeApplication">
+        SELECT * FROM unfreeze_application 
+        WHERE user_id = #{userId} AND status = 0
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectList" resultType="com.young.pojo.UnfreezeApplication">
+        SELECT a.id, a.user_id, a.reason, a.status, a.create_time, a.admin_id,
+               p.real_name, u.username
+        FROM unfreeze_application a
+        LEFT JOIN user_profile p ON a.user_id = p.user_id
+        LEFT JOIN sys_user u ON a.user_id = u.id
+        ORDER BY a.create_time DESC
+    </select>
+
+</mapper>

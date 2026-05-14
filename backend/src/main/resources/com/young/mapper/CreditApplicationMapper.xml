@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.CreditApplicationMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO credit_application (user_id, requested_amount, status, create_time, update_time)
+        VALUES (#{userId}, #{requestedAmount}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE credit_application 
+        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="com.young.pojo.CreditApplication">
+        SELECT * FROM credit_application WHERE id = #{id}
+    </select>
+    
+    <select id="selectLatestPendingByUserId" resultType="com.young.pojo.CreditApplication">
+        SELECT * FROM credit_application 
+        WHERE user_id = #{userId} AND status = 0
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectPendingList" resultType="com.young.pojo.CreditApplication">
+        SELECT a.id, a.user_id, a.requested_amount, a.status, a.create_time,
+               p.real_name, p.id_card, u.username
+        FROM credit_application a
+        LEFT JOIN user_profile p ON a.user_id = p.user_id
+        LEFT JOIN sys_user u ON a.user_id = u.id
+        WHERE a.status = 0
+        ORDER BY a.create_time ASC
+    </select>
+
+</mapper>

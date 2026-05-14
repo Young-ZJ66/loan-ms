@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.RepaymentPlanMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO repayment_plan 
+        (loan_id, user_id, term_index, principal, interest, penalty, total_amount, due_date, status, create_time, update_time)
+        VALUES 
+        (#{loanId}, #{userId}, #{termIndex}, #{principal}, #{interest}, #{penalty}, #{totalAmount}, #{dueDate}, #{status}, NOW(), NOW())
+    </insert>
+
+    <select id="selectByUserId" resultType="com.young.pojo.RepaymentPlan">
+        SELECT * FROM repayment_plan 
+        WHERE user_id = #{userId} 
+        ORDER BY due_date ASC
+    </select>
+
+    <select id="selectByLoanId" resultType="com.young.pojo.RepaymentPlan">
+        SELECT * FROM repayment_plan 
+        WHERE loan_id = #{loanId} 
+        ORDER BY term_index ASC
+    </select>
+
+    <select id="selectOverduePlans" resultType="com.young.pojo.RepaymentPlan">
+        SELECT * FROM repayment_plan 
+        WHERE status IN (0, 2) AND due_date &lt; #{today}
+    </select>
+
+    <update id="updateOverduePlan">
+        UPDATE repayment_plan 
+        SET penalty = #{penalty}, 
+            total_amount = #{totalAmount}, 
+            status = #{status} 
+        WHERE id = #{id}
+    </update>
+    <select id="selectAll" resultType="com.young.pojo.RepaymentPlan">
+        SELECT 
+            rp.*,
+            COALESCE(up.real_name, CONCAT('UID:', rp.user_id)) AS remark
+        FROM repayment_plan rp
+        LEFT JOIN user_profile up ON rp.user_id = up.user_id
+        ORDER BY rp.due_date ASC
+    </select>
+
+</mapper>

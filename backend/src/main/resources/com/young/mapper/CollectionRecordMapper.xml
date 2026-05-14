@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.CollectionRecordMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO collection_record (plan_id, loan_id, user_id, admin_id, method, result, create_time)
+        VALUES (#{planId}, #{loanId}, #{userId}, #{adminId}, #{method}, #{result}, NOW())
+    </insert>
+
+    <select id="selectByPlanId" resultType="com.young.pojo.CollectionRecord">
+        SELECT * FROM collection_record
+        WHERE plan_id = #{planId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 全量查询含关联信息，用于管理端催收台 -->
+    <select id="selectAll" resultType="com.young.pojo.CollectionRecord">
+        SELECT * FROM collection_record
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

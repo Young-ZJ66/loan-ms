@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.UserCreditMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_credit 
+        (user_id, total_credit, used_credit, available_credit, status, create_time, update_time)
+        VALUES 
+        (#{userId}, #{totalCredit}, #{usedCredit}, #{availableCredit}, #{status}, NOW(), NOW())
+    </insert>
+
+    <select id="selectByUserId" resultType="com.young.pojo.UserCredit">
+        SELECT * FROM user_credit WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateCredit">
+        UPDATE user_credit 
+        SET total_credit = #{totalCredit}, 
+            available_credit = #{availableCredit}, 
+            used_credit = #{usedCredit}, 
+            update_time = NOW() 
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE user_credit 
+        SET status = #{status}, update_time = NOW() 
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="freezeAmount">
+        UPDATE user_credit 
+        SET available_credit = available_credit - #{amount}, 
+            used_credit = used_credit + #{amount}, 
+            update_time = NOW() 
+        WHERE user_id = #{userId} AND available_credit >= #{amount} AND status = 1
+    </update>
+
+    <update id="unfreezeAmount">
+        UPDATE user_credit 
+        SET available_credit = LEAST(available_credit + #{amount}, total_credit), 
+            used_credit = GREATEST(used_credit - #{amount}, 0), 
+            update_time = NOW() 
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

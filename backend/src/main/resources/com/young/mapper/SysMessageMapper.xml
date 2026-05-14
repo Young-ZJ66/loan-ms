@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.SysMessageMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_message (to_user_id, title, content, is_read, create_time)
+        VALUES (#{toUserId}, #{title}, #{content}, 0, NOW())
+    </insert>
+
+    <select id="selectByUserId" resultType="com.young.pojo.SysMessage">
+        SELECT * FROM sys_message
+        WHERE to_user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(*) FROM sys_message
+        WHERE to_user_id = #{userId} AND is_read = 0
+    </select>
+
+    <update id="markRead">
+        UPDATE sys_message SET is_read = 1
+        WHERE id = #{id} AND to_user_id = #{userId}
+    </update>
+
+    <update id="markAllRead">
+        UPDATE sys_message SET is_read = 1
+        WHERE to_user_id = #{userId} AND is_read = 0
+    </update>
+
+</mapper>

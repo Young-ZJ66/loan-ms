@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.young.mapper.LoanApplicationMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO loan_application 
+        (user_id, product_id, amount, term_months, annual_rate, purpose, status, apply_time, create_time, update_time)
+        VALUES 
+        (#{userId}, #{productId}, #{amount}, #{termMonths}, #{annualRate}, #{purpose}, #{status}, #{applyTime}, NOW(), NOW())
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE loan_application 
+        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW() 
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultType="com.young.pojo.LoanApplication">
+        SELECT * FROM loan_application WHERE id = #{id}
+    </select>
+
+    <select id="selectList" resultType="com.young.pojo.LoanApplication">
+        SELECT a.*, u.username, p.real_name as realName, pr.name as productName
+        FROM loan_application a
+        LEFT JOIN sys_user u ON a.user_id = u.id
+        LEFT JOIN user_profile p ON a.user_id = p.user_id
+        LEFT JOIN loan_product pr ON a.product_id = pr.id
+        <where>
+            <if test="userId != null">
+                AND a.user_id = #{userId}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+    <select id="countTodayApplications" resultType="int">
+        SELECT COUNT(*) FROM loan_application WHERE DATE(apply_time) = CURDATE()
+    </select>
+
+    <!-- 总放款金额：only status=1 的合约 -->
+    <select id="sumDisbursed" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM loan_application WHERE status = 1
+    </select>
+
+</mapper>

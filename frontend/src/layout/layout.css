@@ -1,0 +1,99 @@
+.layout-container {
+  height: 100vh;
+  width: 100%;
+}
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  height: 60px;
+}
+.logo {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+}
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.role-tag {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.main-body {
+  height: calc(100vh - 60px);
+}
+.side-nav {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+.menu-title {
+  padding: 20px 20px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-transform: uppercase;
+}
+.el-menu-vertical {
+  border-right: none;
+}
+.el-menu-vertical :deep(.el-menu-item) {
+  margin: 4px 12px;
+  border-radius: 8px;
+  color: #cbd5e0;
+}
+.el-menu-vertical :deep(.el-menu-item.is-active) {
+  background: rgba(255,255,255,0.1) !important;
+  font-weight: 600;
+}
+.el-menu-vertical :deep(.el-menu-item:hover) {
+  background: rgba(255,255,255,0.05) !important;
+}
+.content-area {
+  padding: 24px;
+  background: transparent;
+  overflow-y: auto;
+}
+
+/* 右上角用户名按钮 */
+.username-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: all 0.2s;
+  position: relative;
+  outline: none;
+}
+.username-btn:hover {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* 未读消息小红点（悬浮在用户名右上角） */
+.header-dot {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #f56c6c;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.4);
+}
