@@ -137,6 +137,13 @@ loan-ms/
 - `credit_application` - 额度申请表
 - `unfreeze_application` - 解冻申请表
 
+## 联系方式
+
+如有问题或需要商业服务，欢迎联系：
+
+- **QQ**: `1600386893`
+- **服务内容**: 付费部署、定制修改、功能扩展等
+
 ## License
 
 MIT
