@@ -38,7 +38,10 @@ public class CollectionController {
      */
     @ApiOperation("查询全部逾期账单")
     @GetMapping("/overdue-plans")
-    public Result<List<RepaymentPlan>> getOverduePlans() {
+    public Result<List<RepaymentPlan>> getOverduePlans(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         // status=2 的账单即逾期中
         List<RepaymentPlan> all = planMapper.selectAll();
         List<RepaymentPlan> overdue = all.stream()
@@ -54,7 +57,11 @@ public class CollectionController {
     @ApiOperation("发起催收动作")
     @PostMapping("/action")
     public Result<String> collect(@RequestBody Map<String, Object> body,
+            @RequestAttribute("role") Integer role,
             HttpServletRequest request) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行发起催收操作");
+        }
         Long adminId = (Long) request.getAttribute("userId");
 
         Long planId = Long.parseLong(body.get("planId").toString());
@@ -80,7 +87,7 @@ public class CollectionController {
         // 同步向贷款人推送站内催收提醒
         SysMessage msg = new SysMessage();
         msg.setToUserId(plan.getUserId());
-        msg.setTitle("🔔 逾期催收通知");
+        msg.setTitle("逾期催收通知");
         msg.setContent(String.format(
                 "您的第 %d 期还款账单已逾期，当前应还总额 %.2f 元（含罚息）。" +
                         "请尽快联系平台处理，催收方式：%s。备注：%s",
@@ -95,7 +102,10 @@ public class CollectionController {
      */
     @ApiOperation("查询指定账单的催收记录")
     @GetMapping("/records/{planId}")
-    public Result<List<CollectionRecord>> getRecords(@PathVariable Long planId) {
+    public Result<List<CollectionRecord>> getRecords(@RequestAttribute("role") Integer role, @PathVariable Long planId) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(collectionMapper.selectByPlanId(planId));
     }
 }

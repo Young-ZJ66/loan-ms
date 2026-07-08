@@ -42,7 +42,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         // 实名前置拦截：客户必须完成 KYC 实名认证且审核通过
         UserProfile profile = userProfileMapper.selectByUserId(userId);
         if (profile == null || profile.getStatus() != 1) {
-            throw new RuntimeException("威信验证不足：请先完成实名认证且利得通过，方可发起贷款申请！");
+            throw new RuntimeException("请先完成实名认证并获得审批通过，方可发起贷款申请！");
         }
 
         // 尝试冻结可用额度（不足则会因为条件未满足导致影响行数为0）

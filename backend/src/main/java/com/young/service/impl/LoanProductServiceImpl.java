@@ -36,13 +36,6 @@ public class LoanProductServiceImpl implements LoanProductService {
 
     @Override
     public void updateProduct(LoanProduct product) {
-        // 若前端未传 status，则从数据库补回当前值，防止 NOT NULL 约束异常
-        if (product.getStatus() == null) {
-            LoanProduct existing = productMapper.selectById(product.getId());
-            if (existing != null) {
-                product.setStatus(existing.getStatus());
-            }
-        }
         productMapper.update(product);
     }
 

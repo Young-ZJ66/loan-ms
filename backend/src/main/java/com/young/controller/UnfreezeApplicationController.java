@@ -50,14 +50,22 @@ public class UnfreezeApplicationController {
 
     @ApiOperation("查询全部历史解冻申诉记录（管理端）")
     @GetMapping("/all")
-    public Result<List<UnfreezeApplication>> listUnfreezeApplications() {
+    public Result<List<UnfreezeApplication>> listUnfreezeApplications(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(applicationMapper.selectList());
     }
 
     @ApiOperation("后台管理员审批与决断申诉")
     @PostMapping("/audit/{id}")
-    public Result<?> auditUnfreeze(@RequestAttribute("userId") Long adminId, @PathVariable Long id,
-            @RequestParam boolean isPass) {
+    public Result<?> auditUnfreeze(@RequestAttribute("userId") Long adminId, 
+                                   @RequestAttribute("role") Integer role, 
+                                   @PathVariable Long id,
+                                   @RequestParam boolean isPass) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         UnfreezeApplication app = applicationMapper.selectById(id);
         if (app == null || app.getStatus() != 0) {
             return Result.error("非法审批");

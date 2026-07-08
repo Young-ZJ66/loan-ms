@@ -34,8 +34,12 @@ public class UserCreditController {
     @ApiOperation("调整用户授信总额度")
     @PostMapping("/adjust")
     public Result<?> adjustCredit(@RequestAttribute("userId") Long adminId,
+                                  @RequestAttribute("role") Integer role,
                                   @RequestParam Long targetUserId,
                                   @RequestParam BigDecimal newTotal) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以调整用户授信总额度");
+        }
         creditService.adjustTotalCredit(adminId, targetUserId, newTotal);
         return Result.success("额度调整成功");
     }
@@ -45,7 +49,13 @@ public class UserCreditController {
      */
     @ApiOperation("风控冻结用户账户")
     @PostMapping("/freeze/{targetUserId}")
-    public Result<?> freezeCredit(@PathVariable Long targetUserId, @RequestParam(required = false) String reason) {
+    public Result<?> freezeCredit(
+            @RequestAttribute("role") Integer role,
+            @PathVariable Long targetUserId, 
+            @RequestParam(required = false) String reason) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行冻结账户操作");
+        }
         creditService.freezeCredit(targetUserId, reason);
         return Result.success("该用户可用额度已被冻结，系统消息已下发");
     }
@@ -55,7 +65,10 @@ public class UserCreditController {
      */
     @ApiOperation("解冻用户账户")
     @PostMapping("/unfreeze/{targetUserId}")
-    public Result<?> unfreezeCredit(@PathVariable Long targetUserId) {
+    public Result<?> unfreezeCredit(@RequestAttribute("role") Integer role, @PathVariable Long targetUserId) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行解冻账户操作");
+        }
         creditService.unfreezeCreditAuth(targetUserId);
         return Result.success("账户风控解除！");
     }
@@ -65,7 +78,10 @@ public class UserCreditController {
      */
     @ApiOperation("查询全平台用户授信情况")
     @GetMapping("/all")
-    public Result<?> getAllCredits() {
+    public Result<?> getAllCredits(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(creditService.getAllCredits());
     }
 }

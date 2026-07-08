@@ -251,17 +251,19 @@ onMounted(() => {
 :deep(.el-tabs__nav-wrap::after) { background-color: rgba(255,255,255,0.1) !important; }
 
 .tab-badge {
-  background-color: #f56c6c;
-  color: white;
+  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明不透明度至 0.65 */
+  color: #ffffff !important; /* 亮白字 */
+  border: 1px solid rgba(245, 108, 108, 0.8) !important;
   border-radius: 10px;
   padding: 0 6px;
-  font-size: 12px;
-  line-height: 18px;
-  height: 18px;
-  min-width: 18px;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
+  min-width: 16px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
   margin-left: 4px;
+  font-weight: bold;
 }
 </style>

@@ -17,5 +17,5 @@ public interface UserProfileService {
     List<UserProfile> getAllProfileList();
 
     /** 管理端进行审批 */
-    void auditKyc(Long adminId, Long profileId, boolean isPass, String reason);
+    void auditKyc(Long adminId, Long profileId, boolean isPass);
 }

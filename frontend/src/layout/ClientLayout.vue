@@ -33,7 +33,7 @@
 
     <el-container class="main-body">
       <el-aside width="220px" class="side-nav">
-        <el-menu :default-active="activeMenu" class="el-menu-vertical" router background-color="transparent" text-color="var(--text-primary)" active-text-color="var(--primary-color)">
+        <el-menu :default-active="activeMenu" class="el-menu-vertical" router background-color="transparent">
           <div class="menu-title">金融服务</div>
           <el-menu-item index="/client/dashboard"><el-icon><Odometer /></el-icon><span>我的额度</span></el-menu-item>
           <el-menu-item index="/client/kyc"><el-icon><User /></el-icon><span>实名认证</span></el-menu-item>
@@ -172,18 +172,20 @@ onMounted(() => {
 @import './layout.css';
 
 .menu-custom-badge {
-  background-color: #f56c6c;
-  color: white;
+  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明红不透明度 */
+  color: #ffffff !important; /* 亮白字 */
+  border: 1px solid rgba(245, 108, 108, 0.8);
   border-radius: 10px;
   padding: 0 6px;
-  font-size: 12px;
-  line-height: 18px;
-  height: 18px;
-  min-width: 18px;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
+  min-width: 16px;
   margin-left: auto;
   display: inline-flex;
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
+  font-weight: 700;
 }
 </style>

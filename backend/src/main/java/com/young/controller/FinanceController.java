@@ -8,6 +8,7 @@ import com.young.pojo.RepaymentRecord;
 import com.young.task.OverdueScanTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.annotations.Api;
@@ -32,7 +33,10 @@ public class FinanceController {
      */
     @ApiOperation("查询全平台还款计划")
     @GetMapping("/plans")
-    public Result<List<RepaymentPlan>> getAllPlans() {
+    public Result<List<RepaymentPlan>> getAllPlans(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(planMapper.selectAll());
     }
 
@@ -41,7 +45,10 @@ public class FinanceController {
      */
     @ApiOperation("查询全平台入账明细")
     @GetMapping("/records")
-    public Result<List<RepaymentRecord>> getAllRecords() {
+    public Result<List<RepaymentRecord>> getAllRecords(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(recordMapper.selectAll());
     }
 
@@ -51,7 +58,10 @@ public class FinanceController {
      */
     @ApiOperation("手动触发逾期清算任务")
     @GetMapping("/trigger-overdue")
-    public Result<String> triggerOverdue() {
+    public Result<String> triggerOverdue(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         overdueScanTask.triggerManually();
         return Result.success("逾期清算任务已手动触发，请查看控制台日志");
     }

@@ -27,7 +27,10 @@ public class LoanProductController {
      */
     @ApiOperation("查询全部贷款产品")
     @GetMapping("/all")
-    public Result<List<LoanProduct>> getAll() {
+    public Result<List<LoanProduct>> getAll(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(productService.getAllProducts());
     }
 
@@ -45,7 +48,10 @@ public class LoanProductController {
      */
     @ApiOperation("新增贷款产品")
     @PostMapping("/add")
-    public Result<?> add(@RequestBody LoanProduct product) {
+    public Result<?> add(@RequestAttribute("role") Integer role, @RequestBody LoanProduct product) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         productService.addProduct(product);
         return Result.success("产品创建成功");
     }
@@ -55,7 +61,10 @@ public class LoanProductController {
      */
     @ApiOperation("编辑贷款产品")
     @PutMapping("/update")
-    public Result<?> update(@RequestBody LoanProduct product) {
+    public Result<?> update(@RequestAttribute("role") Integer role, @RequestBody LoanProduct product) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         productService.updateProduct(product);
         return Result.success("产品信息已更新");
     }
@@ -65,7 +74,10 @@ public class LoanProductController {
      */
     @ApiOperation("切换产品上下架状态")
     @PostMapping("/toggle/{id}")
-    public Result<?> toggle(@PathVariable Long id) {
+    public Result<?> toggle(@RequestAttribute("role") Integer role, @PathVariable Long id) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         productService.toggleStatus(id);
         return Result.success("产品状态已切换");
     }

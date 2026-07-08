@@ -48,7 +48,10 @@ public class CreditApplicationController {
      */
     @ApiOperation("查询待审批申请列表（管理端）")
     @GetMapping("/pending")
-    public Result<List<CreditApplication>> getPendingList() {
+    public Result<List<CreditApplication>> getPendingList(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(applicationService.getPendingList());
     }
 
@@ -59,7 +62,11 @@ public class CreditApplicationController {
     @PostMapping("/approve/{id}")
     public Result<?> approve(@PathVariable Long id, 
                              @RequestParam BigDecimal approveAmount, 
-                             @RequestAttribute("userId") Long adminId) {
+                             @RequestAttribute("userId") Long adminId,
+                             @RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         if (approveAmount.compareTo(BigDecimal.ZERO) <= 0) {
             return Result.error("下发额度必须大于0");
         }
@@ -73,7 +80,11 @@ public class CreditApplicationController {
     @ApiOperation("驳回提额申请")
     @PostMapping("/reject/{id}")
     public Result<?> reject(@PathVariable Long id, 
-                            @RequestAttribute("userId") Long adminId) {
+                            @RequestAttribute("userId") Long adminId,
+                            @RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         applicationService.reject(id, adminId);
         return Result.success("提额申请已驳回打回");
     }

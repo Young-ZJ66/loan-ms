@@ -74,13 +74,20 @@ public class OverdueScanTask {
             LocalDate dueLocal = plan.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             long daysLeft = ChronoUnit.DAYS.between(todayLocal, dueLocal);
             if (daysLeft >= 0 && daysLeft <= 3) {
-                // 检查是否已发过该期次的未读提醒，避免重复轰炸
-                int unreadCount = messageMapper.countUnread(plan.getUserId());
-                // 检查未读总数以实施基础速率限制
-                // 待优化：生产环境需结合 plan_id + 消息类型构建幂等去重表
+                // 检查是否已发过针对该贷款该期次的到期提醒，避免重复发送
+                boolean alreadySent = messageMapper.selectByUserId(plan.getUserId()).stream()
+                        .anyMatch(m -> "还款温馨提醒".equals(m.getTitle()) 
+                                && m.getContent().contains(String.format("第 %d 期还款账单", plan.getTermIndex()))
+                                && m.getContent().contains(dueLocal.toString()));
+                if (alreadySent) {
+                    log.info("用户 {} 的第{}期还款账单（到期日 {}）已发送过到期提醒，本次跳过", 
+                            plan.getUserId(), plan.getTermIndex(), dueLocal);
+                    continue;
+                }
+
                 SysMessage msg = new SysMessage();
                 msg.setToUserId(plan.getUserId());
-                msg.setTitle("⚠️ 还款温馨提醒");
+                msg.setTitle("还款温馨提醒");
                 msg.setContent(String.format(
                         "您的第 %d 期还款账单（应还金额 %.2f 元）将于 %s 到期，还有 %d 天，请尽快安排还款，逾期将产生万五日息罚金！",
                         plan.getTermIndex(), plan.getTotalAmount(), dueLocal, daysLeft

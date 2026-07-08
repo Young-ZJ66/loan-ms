@@ -182,10 +182,10 @@ CREATE TABLE IF NOT EXISTS `unfreeze_application` (
 
 -- 初始化默认系统账号与用户实体
 REPLACE INTO `sys_user` (`id`, `username`, `password`, `role`) VALUES 
-(1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 1),
-(2, 'user1', 'e10adc3949ba59abbe56e057f20f883e', 0),
-(3, 'user2', 'e10adc3949ba59abbe56e057f20f883e', 0),
-(4, 'user3', 'e10adc3949ba59abbe56e057f20f883e', 0);
+(1, 'admin', '9c79a54a321d1a75b16af397a27aa783', 1),
+(2, 'user', '9c79a54a321d1a75b16af397a27aa783', 0),
+(3, 'user1', '9c79a54a321d1a75b16af397a27aa783', 0),
+(4, 'user2', '9c79a54a321d1a75b16af397a27aa783', 0);
 
 -- 已认证用户预置资料
 REPLACE INTO `user_profile` (`user_id`, `real_name`, `id_card`, `id_card_front`, `id_card_back`, `bank_name`, `bank_card`, `phone`, `email`, `status`) VALUES 

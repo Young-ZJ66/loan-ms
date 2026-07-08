@@ -61,12 +61,12 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-if="scope.row.status === 0" @click="audit(scope.row.id, true)" style="color: #67c23a;">✓ 通过认证</el-dropdown-item>
-                <el-dropdown-item v-if="scope.row.status === 0" @click="rejectKyc(scope.row.id)" style="color: #f56c6c;">✗ 驳回申请</el-dropdown-item>
+                <el-dropdown-item v-if="scope.row.status === 0" @click="audit(scope.row.id, true)" style="color: #67c23a;">通过认证</el-dropdown-item>
+                <el-dropdown-item v-if="scope.row.status === 0" :divided="scope.row.credit != null" @click="audit(scope.row.id, false)" style="color: #f56c6c;">驳回申请</el-dropdown-item>
                 <el-dropdown-item v-if="scope.row.credit" @click="openAdjust(scope.row.credit)">调额设置</el-dropdown-item>
                 <el-dropdown-item v-if="scope.row.credit && scope.row.credit.status === 1" @click="openFreeze(scope.row.credit.userId)" style="color: #f56c6c;">冻结管控</el-dropdown-item>
                 <el-dropdown-item v-if="scope.row.credit && scope.row.credit.status === 0" @click="unfreeze(scope.row.credit.userId)" style="color: #67c23a;">解冻恢复</el-dropdown-item>
-                <el-dropdown-item :divided="scope.row.status === 0 || scope.row.credit != null" @click="resetPwd(scope.row.userId)">重置密码</el-dropdown-item>
+                <el-dropdown-item divided @click="resetPwd(scope.row.userId)">重置密码</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -279,23 +279,6 @@ const audit = async (id, isPass) => {
         loadData()
         dispatchRefresh()
     } catch {}
-}
-
-const rejectKyc = (id) => {
-  ElMessageBox.prompt('请输入驳回实名认证的原因', '驳回申请', {
-    confirmButtonText: '确认驳回',
-    cancelButtonText: '取消',
-    inputPattern: /.+/,
-    inputErrorMessage: '驳回原因不能为空',
-    customClass: 'dark-dialog'
-  }).then(async ({ value }) => {
-    try {
-      await request.post(`/kyc/audit/${id}?isPass=false&reason=${encodeURIComponent(value)}`)
-      ElMessage.success('实名审核已驳回，并已通知用户')
-      loadData()
-      dispatchRefresh()
-    } catch {}
-  }).catch(() => {})
 }
 
 const auditAndClose = async (id, isPass) => {

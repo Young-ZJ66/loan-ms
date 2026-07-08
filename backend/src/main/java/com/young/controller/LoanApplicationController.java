@@ -34,7 +34,10 @@ public class LoanApplicationController {
      */
     @ApiOperation("查询待审批贷款列表（管理端）")
     @GetMapping("/pending")
-    public Result<?> listPending() {
+    public Result<?> listPending(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(loanService.getApplicationList(null).stream()
                 .filter(a -> a.getStatus() == 0).toList());
     }
@@ -44,7 +47,13 @@ public class LoanApplicationController {
      */
     @ApiOperation("审批通过并放款")
     @PostMapping("/approve/{appId}")
-    public Result<?> approveAndDisburse(@RequestAttribute("userId") Long adminId, @PathVariable Long appId) {
+    public Result<?> approveAndDisburse(
+            @RequestAttribute("userId") Long adminId, 
+            @RequestAttribute("role") Integer role, 
+            @PathVariable Long appId) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         loanService.approveAndDisburse(appId);
         return Result.success("放款成功，账单计划已自动生成下发");
     }
@@ -54,7 +63,10 @@ public class LoanApplicationController {
      */
     @ApiOperation("驳回贷款申请")
     @PostMapping("/reject/{appId}")
-    public Result<?> rejectLoan(@PathVariable Long appId) {
+    public Result<?> rejectLoan(@RequestAttribute("role") Integer role, @PathVariable Long appId) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
         loanService.rejectLoan(appId);
         return Result.success("申请已被驳回");
     }
@@ -64,7 +76,14 @@ public class LoanApplicationController {
      */
     @ApiOperation("查询贷款申请列表")
     @GetMapping("/list")
-    public Result<List<LoanApplication>> getList(@RequestParam(required = false) Long userId) {
+    public Result<List<LoanApplication>> getList(
+            @RequestAttribute("userId") Long loggedUserId,
+            @RequestAttribute("role") Integer role,
+            @RequestParam(required = false) Long userId) {
+        // 如果不是管理员，且试图查询别人的或者全部的数据，则判定为水平越权访问
+        if ((role == null || role != 1) && (userId == null || !userId.equals(loggedUserId))) {
+            return Result.error(403, "越权访问：您无权查询其他用户的贷款申请列表");
+        }
         List<LoanApplication> list = loanService.getApplicationList(userId);
         return Result.success(list);
     }

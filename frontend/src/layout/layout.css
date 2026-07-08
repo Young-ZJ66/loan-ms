@@ -49,14 +49,25 @@
 .el-menu-vertical :deep(.el-menu-item) {
   margin: 4px 12px;
   border-radius: 8px;
-  color: #cbd5e0;
+  color: #e2e8f0 !important; /* 改为与“核心业务区”标题相同的亮白灰 #e2e8f0 */
+}
+.el-menu-vertical :deep(.el-menu-item .el-icon) {
+  color: #e2e8f0 !important;
 }
 .el-menu-vertical :deep(.el-menu-item.is-active) {
-  background: rgba(255,255,255,0.1) !important;
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.12) !important;
+  font-weight: 700 !important; /* 激活态仅加粗显示 */
+  color: #ffffff !important;
+}
+.el-menu-vertical :deep(.el-menu-item.is-active .el-icon) {
+  color: #ffffff !important;
 }
 .el-menu-vertical :deep(.el-menu-item:hover) {
-  background: rgba(255,255,255,0.05) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+.el-menu-vertical :deep(.el-menu-item:hover .el-icon) {
+  color: #ffffff !important;
 }
 .content-area {
   padding: 24px;
@@ -86,14 +97,14 @@
   border-color: rgba(255,255,255,0.3);
 }
 
-/* 未读消息小红点（悬浮在用户名右上角） */
+/* 未读消息小红点（悬浮在用户名右上角，半透明红色发光质感） */
 .header-dot {
   position: absolute;
   top: 4px;
   right: 6px;
   width: 8px;
   height: 8px;
-  background: #f56c6c;
+  background: rgba(245, 108, 108, 0.85);
   border-radius: 50%;
-  border: 2px solid rgba(0,0,0,0.4);
+  box-shadow: 0 0 6px rgba(245, 108, 108, 0.8);
 }

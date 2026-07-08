@@ -1,9 +1,14 @@
 <template>
   <div class="page-container glass-panel">
     <div class="header-banner">
-      <h2>消息中心</h2>
-      <p>您的还款提醒与平台通知都在这里</p>
-      <el-button size="small" type="primary" plain @click="markAll" style="margin-top:12px" :disabled="messages.length === 0">全部标为已读</el-button>
+      <div class="header-content">
+        <h2>消息中心</h2>
+        <p>您的还款提醒与平台通知都在这里</p>
+      </div>
+      <el-button size="default" class="glass-action-btn" @click="markAll" :disabled="messages.length === 0" round>
+        <el-icon style="margin-right: 6px;"><CircleCheck /></el-icon>
+        全部标为已读
+      </el-button>
     </div>
 
     <div v-loading="loading">
@@ -16,14 +21,19 @@
         <div class="empty-desc">
           您目前没有任何通知<br/>保持良好的还款记录，系统将在有新动态时第一时间提醒您
         </div>
-        <div class="empty-badge">🎉 信用良好</div>
+        <div class="empty-badge">
+          <el-icon style="vertical-align: middle; margin-right: 4px;"><CircleCheck /></el-icon>信用良好
+        </div>
       </div>
 
       <!-- 消息列表 -->
       <div v-for="msg in messages" :key="msg.id" class="msg-card" :class="{ unread: msg.isRead === 0 }" @click="readMsg(msg)">
         <div class="msg-header">
-          <span class="msg-title">{{ msg.title }}</span>
-          <el-tag v-if="msg.isRead === 0" type="danger" size="small" effect="dark">未读</el-tag>
+          <span class="msg-title">
+            <span v-if="msg.isRead === 0" class="msg-dot"></span>
+            {{ msg.title }}
+          </span>
+          <el-tag v-if="msg.isRead === 0" class="unread-tag" size="small">未读</el-tag>
           <el-tag v-else type="info" size="small">已读</el-tag>
         </div>
         <div class="msg-body">{{ msg.content }}</div>
@@ -35,7 +45,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Bell } from '@element-plus/icons-vue'
+import { Bell, CircleCheck } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 
@@ -78,9 +88,35 @@ onMounted(() => loadMessages())
 
 <style scoped>
 .page-container { padding: 30px; }
-.header-banner { margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+.header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 20px;
+}
 .header-banner h2 { font-size: 24px; color: #fff; margin-bottom: 5px; }
 .header-banner p { color: #cbd5e1; }
+
+.glass-action-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid #ffffff !important; /* 边框调成和字色一样的白色 */
+  color: #ffffff !important; /* 字体颜色回退为高雅白色 */
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.glass-action-btn:hover:not(:disabled) {
+  background: rgba(79, 70, 229, 0.25) !important;
+  border-color: rgba(79, 70, 229, 0.45) !important;
+  transform: translateY(-1px);
+}
+.glass-action-btn:disabled {
+  background: rgba(128, 128, 128, 0.03) !important;
+  border: 1px solid var(--border-subtle) !important; /* 绑定自适应边框色，彻底解决浅色主题下看不清的问题 */
+  color: var(--text-secondary) !important; /* 自适应辅助字色 */
+  cursor: not-allowed;
+}
 
 /* 空态区块 */
 .empty-state {
@@ -158,10 +194,28 @@ onMounted(() => loadMessages())
   backdrop-filter: blur(10px);
 }
 .msg-card:hover { background: rgba(0,0,0,0.5) !important; border-color: rgba(98,106,239,0.7) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.35); }
-.msg-card.unread { border-left: 4px solid #f56c6c !important; }
+.msg-card.unread { border-left: 4px solid rgba(245, 108, 108, 0.85) !important; }
 
 .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .msg-title { font-size: 16px; font-weight: bold; color: #ffffff !important; letter-spacing: 0.5px; }
 .msg-body { font-size: 14px; color: #f8fafc !important; line-height: 1.6; margin-bottom: 8px; font-weight: 500; }
 .msg-time { font-size: 12px; color: #cbd5e1 !important; text-align: right; }
+
+:deep(.unread-tag) {
+  background-color: rgba(245, 108, 108, 0.65) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(245, 108, 108, 0.8) !important;
+  font-weight: bold;
+}
+
+.msg-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(245, 108, 108, 0.85);
+  box-shadow: 0 0 6px rgba(245, 108, 108, 0.8);
+  margin-right: 8px;
+  vertical-align: middle;
+}
 </style>

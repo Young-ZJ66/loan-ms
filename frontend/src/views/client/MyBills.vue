@@ -127,4 +127,18 @@ onMounted(() => loadPlans())
 :deep(.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell) {
   background-color: rgba(98,106,239,0.3) !important; color: #fff;
 }
+
+/* 页面内账单催还或逾期消息提示标签的半透明化覆盖 */
+:deep(.el-tag--danger) {
+  background-color: rgba(245, 108, 108, 0.65) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(245, 108, 108, 0.8) !important;
+  font-weight: bold;
+}
+:deep(.el-tag--warning) {
+  background-color: rgba(245, 158, 11, 0.65) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(245, 158, 11, 0.8) !important;
+  font-weight: bold;
+}
 </style>

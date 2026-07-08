@@ -36,21 +36,33 @@ public class UserProfileController {
 
     @ApiOperation("查询待审核档案列表（管理端）")
     @GetMapping("/pending")
-    public Result<List<UserProfile>> listPending() {
-        // 这里理论上应受权限管控（adminId），由于JWT全局已区分，假设进入的必定是管理视角
+    public Result<List<UserProfile>> listPending(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(profileService.getPendingKycList());
     }
 
     @ApiOperation("查询全部档案列表")
     @GetMapping("/all")
-    public Result<List<UserProfile>> listAll() {
+    public Result<List<UserProfile>> listAll(@RequestAttribute("role") Integer role) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以访问此接口");
+        }
         return Result.success(profileService.getAllProfileList());
     }
 
     @ApiOperation("审批实名认证档案")
     @PostMapping("/audit/{id}")
-    public Result<?> audit(@RequestAttribute("userId") Long adminId, @PathVariable Long id, @RequestParam boolean isPass, @RequestParam(required = false) String reason) {
-        profileService.auditKyc(adminId, id, isPass, reason);
+    public Result<?> audit(
+            @RequestAttribute("userId") Long adminId, 
+            @RequestAttribute("role") Integer role, 
+            @PathVariable Long id, 
+            @RequestParam boolean isPass) {
+        if (role == null || role != 1) {
+            return Result.error(403, "权限不足：只有管理员可以执行此操作");
+        }
+        profileService.auditKyc(adminId, id, isPass);
         return Result.success(isPass ? "实名审核已通过" : "实名审核已驳回");
     }
 }

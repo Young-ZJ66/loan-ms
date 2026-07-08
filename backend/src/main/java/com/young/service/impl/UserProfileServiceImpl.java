@@ -15,22 +15,11 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Autowired
     private UserProfileMapper profileMapper;
 
-    @Autowired
-    private com.young.mapper.SysMessageMapper messageMapper;
-
     @Override
     public void submitKyc(UserProfile data) {
         UserProfile exist = profileMapper.selectByUserId(data.getUserId());
         if (exist != null) {
-            if (exist.getStatus() != null && exist.getStatus() == 2) {
-                // Allows update if previously rejected
-                data.setId(exist.getId());
-                data.setStatus(0);
-                profileMapper.update(data);
-                return;
-            } else {
-                throw new RuntimeException("您已经提交过实名材料，请勿重复发起");
-            }
+            throw new RuntimeException("您已经提交过实名材料，请勿重复发起");
         }
         
         data.setStatus(0); // 待管理员审核
@@ -39,7 +28,9 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public UserProfile getMyProfile(Long userId) {
-        return profileMapper.selectByUserId(userId);
+        UserProfile profile = profileMapper.selectByUserId(userId);
+        maskSensitiveData(profile);
+        return profile;
     }
 
     @Override
@@ -53,7 +44,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public void auditKyc(Long adminId, Long profileId, boolean isPass, String reason) {
+    public void auditKyc(Long adminId, Long profileId, boolean isPass) {
         UserProfile p = profileMapper.selectById(profileId);
         if (p == null || p.getStatus() != 0) return;
         
@@ -61,19 +52,26 @@ public class UserProfileServiceImpl implements UserProfileService {
         p.setStatus(isPass ? 1 : 2);
         p.setAuditTime(new Date());
         profileMapper.update(p);
+    }
 
-        com.young.pojo.SysMessage msg = new com.young.pojo.SysMessage();
-        msg.setToUserId(p.getUserId());
-        msg.setIsRead(0);
-        
-        if (!isPass && reason != null && !reason.trim().isEmpty()) {
-            msg.setTitle("实名认证被驳回");
-            msg.setContent("您的实名认证被驳回，原因：" + reason + "。请修改后重新提交。");
-            messageMapper.insert(msg);
-        } else if (isPass) {
-            msg.setTitle("实名认证已通过");
-            msg.setContent("您的实名认证已通过，现在可以前往申请贷款了。");
-            messageMapper.insert(msg);
+    /**
+     * 实名认证信息脱敏辅助方法
+     */
+    private void maskSensitiveData(UserProfile profile) {
+        if (profile == null) {
+            return;
+        }
+        // 身份证号脱敏：仅保留前3位与后4位，中间替换为 *
+        if (profile.getIdCard() != null && profile.getIdCard().length() >= 10) {
+            profile.setIdCard(profile.getIdCard().replaceAll("(?<=\\d{3})\\d(?=\\d{4})", "*"));
+        }
+        // 银行卡号脱敏：仅保留前4位与后4位，中间替换为 *
+        if (profile.getBankCard() != null && profile.getBankCard().length() >= 8) {
+            profile.setBankCard(profile.getBankCard().replaceAll("(?<=\\d{4})\\d(?=\\d{4})", "*"));
+        }
+        // 联系手机脱敏：保留前3位和后4位，中间替换为 *
+        if (profile.getPhone() != null && profile.getPhone().length() == 11) {
+            profile.setPhone(profile.getPhone().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2"));
         }
     }
 }

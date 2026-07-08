@@ -40,7 +40,7 @@
       </el-table-column>
       <el-table-column label="上架状态" min-width="100">
         <template #default="scope">
-          <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" effect="dark">
+          <el-tag :type="scope.row.status === 1 ? 'success' : 'info'" size="small" round>
             {{ scope.row.status === 1 ? '上架中' : '已下架' }}
           </el-tag>
         </template>
@@ -161,8 +161,7 @@ const openEdit = (row) => {
     maxAmount: row.maxAmount,
     minTerm: row.minTerm,
     maxTerm: row.maxTerm,
-    description: row.description,
-    status: row.status
+    description: row.description
   }
   dialogVisible.value = true
 }

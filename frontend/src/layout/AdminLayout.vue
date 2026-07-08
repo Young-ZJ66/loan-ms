@@ -27,7 +27,7 @@
 
     <el-container class="main-body">
       <el-aside width="220px" class="side-nav">
-        <el-menu :default-active="activeMenu" class="el-menu-vertical" router background-color="transparent" text-color="var(--text-primary)" active-text-color="#f56c6c">
+        <el-menu :default-active="activeMenu" class="el-menu-vertical" router background-color="transparent">
           <div class="menu-title">核心业务区</div>
           <el-menu-item index="/admin/dashboard">
             <el-icon><DataLine /></el-icon>
@@ -185,26 +185,32 @@ const logout = () => {
 }
 
 .menu-custom-badge {
-  background-color: #f56c6c;
-  color: white;
+  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明红不透明度 */
+  color: #ffffff !important; /* 亮白字 */
+  border: 1px solid rgba(245, 108, 108, 0.8);
   border-radius: 10px;
   padding: 0 6px;
-  font-size: 12px;
-  line-height: 18px;
-  height: 18px;
-  min-width: 18px;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
+  min-width: 16px;
   margin-left: auto;
   display: inline-flex;
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
+  font-weight: 700;
 }
 
 .warning-badge {
-  background-color: #e6a23c;
+  background-color: rgba(245, 158, 11, 0.65) !important; /* 提升半透明橙不透明度 */
+  color: #ffffff !important; /* 亮白字 */
+  border: 1px solid rgba(245, 158, 11, 0.8);
 }
 
 .danger-badge {
-  background-color: #f56c6c;
+  background-color: rgba(245, 108, 108, 0.65) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(245, 108, 108, 0.8);
 }
 </style>

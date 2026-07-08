@@ -3,8 +3,10 @@ package com.young.service.impl;
 import com.young.mapper.RepaymentPlanMapper;
 import com.young.mapper.RepaymentRecordMapper;
 import com.young.mapper.UserCreditMapper;
+import com.young.mapper.LoanApplicationMapper;
 import com.young.pojo.RepaymentPlan;
 import com.young.pojo.RepaymentRecord;
+import com.young.pojo.LoanApplication;
 import com.young.service.RepaymentPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
     private RepaymentRecordMapper recordMapper;
     @Autowired
     private UserCreditMapper creditMapper;
+    @Autowired
+    private LoanApplicationMapper loanApplicationMapper;
 
     @Override
     public List<RepaymentPlan> getUserPlans(Long userId, Integer status) {
@@ -66,6 +70,12 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void payEarlySettlement(Long userId, Long loanId) {
+        // 水平越权校验：必须保证这笔贷款属于当前操作用户
+        LoanApplication loanApp = loanApplicationMapper.selectById(loanId);
+        if (loanApp == null || !loanApp.getUserId().equals(userId)) {
+            throw new RuntimeException("操作受限：该贷款单不存在或不属于当前用户！");
+        }
+
         List<RepaymentPlan> plans = planMapper.selectByLoanId(loanId);
         BigDecimal sumTotal = BigDecimal.ZERO;
         BigDecimal sumPrincipal = BigDecimal.ZERO;

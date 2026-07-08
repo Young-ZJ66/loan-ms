@@ -27,7 +27,13 @@ public class UploadController {
                 ? originalFilename.substring(originalFilename.lastIndexOf("."))
                 : ".jpg";
 
-        String newName = UUID.randomUUID().toString().replace("-", "") + ext;
+        // 后缀白名单过滤，只允许常见的图片类型，防御 Webshell 与恶意脚本上传
+        String lowerExt = ext.toLowerCase();
+        if (!java.util.List.of(".jpg", ".jpeg", ".png", ".gif").contains(lowerExt)) {
+            return Result.error("文件上传失败：不支持的文件类型！仅支持上传 JPG, JPEG, PNG, GIF 格式的图片文件。");
+        }
+
+        String newName = UUID.randomUUID().toString().replace("-", "") + lowerExt;
 
         // 统一存放在项目根目录外的 uploads 目录下，方便静态资源代理和持久化
         String destDirPath = System.getProperty("user.dir") + "/uploads/";
