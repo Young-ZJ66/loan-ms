@@ -1,7 +1,7 @@
 package com.young.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.young.common.Result;
 import com.young.pojo.UserCredit;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
-@Api(tags = "用户授信管理")
+@Tag(name = "用户授信管理")
 @RestController
 @RequestMapping("/api/credit")
 public class UserCreditController {
@@ -22,7 +22,7 @@ public class UserCreditController {
     /**
      * [客户端] 获取我的额度详情
      */
-    @ApiOperation("查询我的额度详情")
+    @Operation(summary = "查询我的额度详情")
     @GetMapping("/my")
     public Result<UserCredit> getMyCredit(@RequestAttribute("userId") Long userId) {
         return Result.success(creditService.getMyCredit(userId));
@@ -31,7 +31,7 @@ public class UserCreditController {
     /**
      * [管理端] 调整用户的总授信额度
      */
-    @ApiOperation("调整用户授信总额度")
+    @Operation(summary = "调整用户授信总额度")
     @PostMapping("/adjust")
     public Result<?> adjustCredit(@RequestAttribute("userId") Long adminId,
                                   @RequestAttribute("role") Integer role,
@@ -47,7 +47,7 @@ public class UserCreditController {
     /**
      * [管理端] 风控冻结用户
      */
-    @ApiOperation("风控冻结用户账户")
+    @Operation(summary = "风控冻结用户账户")
     @PostMapping("/freeze/{targetUserId}")
     public Result<?> freezeCredit(
             @RequestAttribute("role") Integer role,
@@ -63,7 +63,7 @@ public class UserCreditController {
     /**
      * [管理端] 解除冻结用户
      */
-    @ApiOperation("解冻用户账户")
+    @Operation(summary = "解冻用户账户")
     @PostMapping("/unfreeze/{targetUserId}")
     public Result<?> unfreezeCredit(@RequestAttribute("role") Integer role, @PathVariable Long targetUserId) {
         if (role == null || role != 1) {
@@ -76,7 +76,7 @@ public class UserCreditController {
     /**
      * [管理端] 查询全平台所有用户授信情况
      */
-    @ApiOperation("查询全平台用户授信情况")
+    @Operation(summary = "查询全平台用户授信情况")
     @GetMapping("/all")
     public Result<?> getAllCredits(@RequestAttribute("role") Integer role) {
         if (role == null || role != 1) {

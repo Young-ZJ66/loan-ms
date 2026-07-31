@@ -9,7 +9,7 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   config => {
-    // 携带动态 JWT
+    // JWT 请求头
     const token = localStorage.getItem('token')
     if (token) {
       config.headers['Authorization'] = 'Bearer ' + token

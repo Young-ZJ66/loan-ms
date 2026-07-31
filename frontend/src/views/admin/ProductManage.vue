@@ -13,7 +13,7 @@
       </div>
     </div>
 
-    <el-table :data="list" style="width: 100%" class="custom-table admin-table" v-loading="loading">
+    <el-table :data="pagedList" style="width: 100%" class="custom-table admin-table" v-loading="loading">
       <el-table-column prop="id" label="产品ID" min-width="80" />
       <el-table-column prop="name" label="产品名称" min-width="150" />
       <el-table-column label="产品类型" min-width="100">
@@ -59,6 +59,9 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination v-model:current-page="currentPage" :page-size="10" :total="list.length" layout="total, prev, pager, next" background />
+    </div>
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑贷款产品' : '新增贷款产品'" width="560px" custom-class="dark-dialog">
@@ -104,13 +107,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 const list = ref([])
 const loading = ref(false)
+const currentPage = ref(1)
+const pagedList = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return list.value.slice(start, start + 10)
+})
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
@@ -219,11 +227,17 @@ onMounted(() => loadData())
 :deep(.admin-table) { background: transparent !important; color: #fff; }
 :deep(.admin-table th.el-table__cell), :deep(.admin-table tr) { background-color: rgba(0,0,0,0.5) !important; color: #fff; font-weight: bold; }
 :deep(.admin-table td.el-table__cell) { border-bottom: 1px solid rgba(255,255,255,0.1); color: #f8fafc; }
-:deep(.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell) { background-color: rgba(98,106,239,0.2) !important; color: #fff; }
+:deep(.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell) { background-color: rgba(98,106,239,0.25) !important; color: #fff; }
 
 .rate-value {
   color: #f59e0b;
   font-weight: bold;
   font-size: 14px;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

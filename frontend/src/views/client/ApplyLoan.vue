@@ -12,7 +12,7 @@
       </el-button>
     </div>
 
-    <el-table :data="list" style="width: 100%" class="custom-table" v-loading="loading">
+    <el-table :data="pagedList" style="width: 100%" class="custom-table" v-loading="loading">
       <el-table-column label="申请时间" min-width="200">
         <template #default="scope">
           {{ formatTime(scope.row.applyTime) }}
@@ -23,7 +23,7 @@
       <el-table-column prop="purpose" label="申请说明" />
     <el-table-column prop="productName" label="贷款产品">
         <template #default="scope">
-          {{ scope.row.productName || '旧版无产品单' }}
+          {{ scope.row.productName || '无关联产品' }}
         </template>
       </el-table-column>
       <el-table-column label="审批状态" min-width="120">
@@ -34,6 +34,9 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination v-model:current-page="currentPage" :page-size="10" :total="list.length" layout="total, prev, pager, next" background />
+    </div>
 
     <!-- 申请弹窗 -->
     <el-dialog v-model="dialogVisible" title="填写贷款申请表" width="600px" custom-class="dark-dialog" @closed="resetForm">
@@ -94,7 +97,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -103,6 +106,11 @@ const list = ref([])
 const products = ref([])
 const selectedProduct = ref(null)
 const loading = ref(false)
+const currentPage = ref(1)
+const pagedList = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return list.value.slice(start, start + 10)
+})
 const dialogVisible = ref(false)
 const submitting = ref(false)
 
@@ -161,7 +169,7 @@ const submit = async () => {
         annualRate: selectedProduct.value.annualRate,
         purpose: form.value.purpose
     })
-    ElMessage.success('贷款申请已提交并进入队列，等待审核放款！')
+    ElMessage.success('贷款申请已提交，等待审批')
     dialogVisible.value = false
     loadData()
   } finally {
@@ -181,7 +189,7 @@ onMounted(() => loadData())
 :deep(.el-table) { background: transparent !important; color: #fff; }
 :deep(.el-table th.el-table__cell), :deep(.el-table tr) { background-color: rgba(0,0,0,0.4) !important; color: #fff; font-weight: bold;}
 :deep(.el-table td.el-table__cell) { border-bottom: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; }
-:deep(.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell) { background-color: rgba(98,106,239,0.3) !important; color: #fff; }
+:deep(.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell) { background-color: rgba(98,106,239,0.25) !important; color: #fff; }
 
 .rate-preview {
   margin: 15px 0 20px;
@@ -214,4 +222,10 @@ onMounted(() => loadData())
   color: #1e293b; font-size: 14px;
 }
 .field-tip { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
 </style>

@@ -34,10 +34,17 @@
             status = #{status} 
         WHERE id = #{id}
     </update>
+
+    <select id="selectUpcomingPlans" resultType="com.young.pojo.RepaymentPlan">
+        SELECT * FROM repayment_plan 
+        WHERE status = 0 AND due_date &gt;= #{fromDate} AND due_date &lt; #{toDate}
+        ORDER BY due_date ASC
+    </select>
+
     <select id="selectAll" resultType="com.young.pojo.RepaymentPlan">
         SELECT 
             rp.*,
-            COALESCE(up.real_name, CONCAT('UID:', rp.user_id)) AS remark
+            COALESCE(up.real_name, CONCAT('UID:', rp.user_id)) AS username
         FROM repayment_plan rp
         LEFT JOIN user_profile up ON rp.user_id = up.user_id
         ORDER BY rp.due_date ASC

@@ -73,7 +73,6 @@ public class UserCreditServiceImpl implements UserCreditService {
         if (current != null && current.getStatus() == 1) {
             creditMapper.updateStatus(targetUserId, 0);
 
-            // 下发站内信告知冻结状态
             SysMessage sysMsg = new SysMessage();
             sysMsg.setToUserId(targetUserId);
             sysMsg.setTitle("【账户冻结通知】");
@@ -91,7 +90,6 @@ public class UserCreditServiceImpl implements UserCreditService {
         if (current != null && current.getStatus() == 0) {
             creditMapper.updateStatus(targetUserId, 1);
 
-            // 下发解冻状态站内通知
             SysMessage sysMsg = new SysMessage();
             sysMsg.setToUserId(targetUserId);
             sysMsg.setTitle("【账户风险解除通知】");
@@ -99,7 +97,6 @@ public class UserCreditServiceImpl implements UserCreditService {
             sysMsg.setIsRead(0);
             messageMapper.insert(sysMsg);
 
-            // 同步签批并核销该用户目前挂起的解冻业务单
             com.young.pojo.UnfreezeApplication pending = unfreezeAppMapper.selectLatestPendingByUserId(targetUserId);
             if (pending != null) {
                 pending.setStatus(1);

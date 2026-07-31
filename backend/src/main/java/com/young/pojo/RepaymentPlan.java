@@ -22,7 +22,7 @@ public class RepaymentPlan {
     private Date settledTime;
     
     /** 用于关联查询时临时承载客户姓名 */
-    private String remark;
+    private String username;
     
     private Date createTime;
     private Date updateTime;

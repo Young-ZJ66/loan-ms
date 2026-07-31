@@ -2,6 +2,7 @@ package com.young.mapper;
 
 import com.young.pojo.RepaymentPlan;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -15,6 +16,9 @@ public interface RepaymentPlanMapper {
     List<RepaymentPlan> selectByLoanId(Long loanId);
     List<RepaymentPlan> selectOverduePlans(Date today);
     int updateOverduePlan(RepaymentPlan plan);
+    
+    /** 查询待还且即将到期的账单（用于到期提醒推送） */
+    List<RepaymentPlan> selectUpcomingPlans(@Param("fromDate") Date fromDate, @Param("toDate") Date toDate);
     
     /** 【管理端】查询全平台所有还款计划（含客户姓名通过 remark 字段回传） */
     List<RepaymentPlan> selectAll();

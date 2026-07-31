@@ -24,7 +24,7 @@ public class LoanApplication {
     /** 关联的贷款产品ID */
     private Long productId;
 
-    // 关联知展示字段
+    // 关联展示字段
     private String username;
     private String realName;
     /** 该申请关联的产品名称 */

@@ -123,7 +123,7 @@ onUnmounted(() => {
   window.removeEventListener('fetch-badges', fetchBadges)
 })
 
-// 优先读 localStorage，没有则从 JWT payload 里解析
+// 读取账号名
 const getUsername = () => {
   const stored = localStorage.getItem('username')
   if (stored) return stored
@@ -185,8 +185,8 @@ const logout = () => {
 }
 
 .menu-custom-badge {
-  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明红不透明度 */
-  color: #ffffff !important; /* 亮白字 */
+  background-color: rgba(245, 108, 108, 0.65) !important;
+  color: #ffffff !important;
   border: 1px solid rgba(245, 108, 108, 0.8);
   border-radius: 10px;
   padding: 0 6px;
@@ -203,8 +203,8 @@ const logout = () => {
 }
 
 .warning-badge {
-  background-color: rgba(245, 158, 11, 0.65) !important; /* 提升半透明橙不透明度 */
-  color: #ffffff !important; /* 亮白字 */
+    background-color: rgba(245, 158, 11, 0.65) !important;
+  color: #ffffff !important;
   border: 1px solid rgba(245, 158, 11, 0.8);
 }
 

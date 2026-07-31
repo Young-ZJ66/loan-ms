@@ -1,6 +1,6 @@
 # Loan-MS 贷款管理系统
 
-一个基于 Spring Boot + Vue 3 的全栈贷款申请与审批管理系统。
+基于 Spring Boot + Vue 3 的贷款申请与审批管理系统。
 
 ## 技术栈
 
@@ -9,6 +9,9 @@
 - **ORM**: MyBatis 3.0.5
 - **数据库**: MySQL 8.0+
 - **认证**: JWT (jjwt 0.11.5)
+- **密码加密**: BCrypt
+- **接口文档**: SpringDoc OpenAPI 2.8.6
+- **AOP**: spring-boot-starter-aop
 - **Java版本**: 17
 
 ### 前端
@@ -22,7 +25,7 @@
 
 ### 客户端功能
 - 用户注册/登录
-- KYC实名认证（提交身份证、银行卡等信息）
+- KYC实名认证
 - 贷款产品浏览
 - 在线贷款申请
 - 额度申请/提额
@@ -33,13 +36,14 @@
 
 ### 管理员端功能
 - KYC资料审核
-- 贷款申请审批
+- 贷款申请审批与放款
 - 额度申请审批
 - 贷款产品管理
 - 还款管理与催收记录
 - 财务统计与数据看板
 - 系统消息发送
 - 用户账户冻结/解冻
+- 逾期账单自动扫描与罚息计算
 
 ## 快速开始
 
@@ -49,15 +53,29 @@
 - MySQL 8.0+
 - Maven 3.8+
 
-### 数据库初始化
+### 数据库配置
 
-1. 创建数据库并执行初始化脚本：
-```bash
-mysql -u root -p < backend/src/main/resources/sql/init.sql
+1. 创建数据库
+
+```sql
+CREATE DATABASE loan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-2. 修改数据库配置（如需要）：
-编辑 `backend/src/main/resources/application.yml` 中的数据库连接信息。
+2. 执行初始化脚本
+
+```bash
+# 文件位置：loan-ms/src/main/resources/sql/db_schema.sql
+```
+
+3. 修改数据库连接配置
+
+```yaml
+# 文件位置：loan-ms/src/main/resources/application.yml
+spring:
+  datasource:
+    username: root
+    password: 1234
+```
 
 ### 后端启动
 
@@ -70,6 +88,8 @@ mvnw.cmd spring-boot:run
 ```
 
 后端服务默认运行在 `http://localhost:8080`
+
+接口文档地址: `http://localhost:8080/doc.html`
 
 ### 前端启动
 
@@ -101,13 +121,14 @@ loan-ms/
 │   │   ├── main/
 │   │   │   ├── java/com/young/
 │   │   │   │   ├── controller/      # 控制器
-│   │   │   │   ├── service/         # 业务逻辑
+│   │   │   │   ├── service/         # 业务逻辑接口
+│   │   │   │   │   └── impl/        # 业务逻辑实现
 │   │   │   │   ├── mapper/          # MyBatis映射
 │   │   │   │   ├── pojo/            # 实体类
 │   │   │   │   ├── config/          # 配置类
 │   │   │   │   ├── utils/           # 工具类
 │   │   │   │   ├── task/            # 定时任务
-│   │   │   │   └── common/          # 公共类
+│   │   │   │   └── common/          # 公共类（异常、拦截器、注解、AOP）
 │   │   │   └── resources/
 │   │   │       ├── sql/             # 数据库脚本
 │   │   │       └── application.yml  # 配置文件
@@ -116,6 +137,8 @@ loan-ms/
 └── frontend/             # 前端项目
     ├── src/
     │   ├── views/        # 页面组件
+    │   │   ├── admin/    # 管理端页面
+    │   │   └── client/   # 客户端页面
     │   ├── components/   # 通用组件
     │   ├── router/       # 路由配置
     │   └── utils/        # 工具函数
@@ -125,17 +148,19 @@ loan-ms/
 
 ## 核心数据表
 
-- `sys_user` - 系统用户表
-- `user_profile` - 用户实名认证表
-- `user_credit` - 用户授信额度表
-- `loan_product` - 贷款产品表
-- `loan_application` - 贷款申请表
-- `repayment_plan` - 还款计划表
-- `repayment_record` - 还款记录表
-- `collection_record` - 催收记录表
-- `sys_message` - 系统消息表
-- `credit_application` - 额度申请表
-- `unfreeze_application` - 解冻申请表
+| 表名 | 说明 |
+|------|------|
+| `sys_user` | 系统用户表 |
+| `user_profile` | 用户实名认证表 |
+| `user_credit` | 用户授信额度表 |
+| `loan_product` | 贷款产品表 |
+| `loan_application` | 贷款申请表 |
+| `repayment_plan` | 还款计划表 |
+| `repayment_record` | 还款记录表 |
+| `collection_record` | 催收记录表 |
+| `sys_message` | 系统消息表 |
+| `credit_application` | 额度申请表 |
+| `unfreeze_application` | 解冻申请表 |
 
 ## 联系方式
 
@@ -146,4 +171,4 @@ loan-ms/
 
 ## License
 
-MIT
+MIT License

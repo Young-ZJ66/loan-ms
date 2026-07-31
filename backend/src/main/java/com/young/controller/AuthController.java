@@ -1,7 +1,7 @@
 package com.young.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.young.common.Result;
 import com.young.service.SysUserService;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Api(tags = "认证登录管理")
+@Tag(name = "认证登录管理")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -19,7 +19,7 @@ public class AuthController {
     @Autowired
     private SysUserService userService;
 
-    @ApiOperation("用户注册")
+    @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result<?> register(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
@@ -31,7 +31,7 @@ public class AuthController {
         return Result.success("注册成功！");
     }
 
-    @ApiOperation("用户登录")
+    @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<String> login(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
@@ -40,7 +40,7 @@ public class AuthController {
         return Result.success(token);
     }
 
-    @ApiOperation("修改当前用户密码")
+    @Operation(summary = "修改当前用户密码")
     @PostMapping("/change-password")
     public Result<?> changePassword(@RequestBody Map<String, String> payload, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -54,7 +54,7 @@ public class AuthController {
         return Result.success("密码修改成功");
     }
 
-    @ApiOperation("管理员重置用户密码")
+    @Operation(summary = "管理员重置用户密码")
     @PostMapping("/admin/reset-password/{userId}")
     public Result<?> resetPassword(@PathVariable Long userId, @RequestBody Map<String, String> payload, HttpServletRequest request) {
         Integer role = (Integer) request.getAttribute("role");

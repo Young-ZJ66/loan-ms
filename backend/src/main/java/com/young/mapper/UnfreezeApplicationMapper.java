@@ -12,10 +12,10 @@ public interface UnfreezeApplicationMapper {
     UnfreezeApplication selectById(Long id);
     UnfreezeApplication selectLatestPendingByUserId(Long userId);
     
-    // 连表查询所有申请（带上用户名和真实姓名）
+    /** 查询所有解冻申请 */
     List<UnfreezeApplication> selectList();
     
-    // 统计待决议数量
+    /** 统计待审批数量 */
     @Select("SELECT COUNT(*) FROM unfreeze_application WHERE status = 0")
     int countPending();
 }

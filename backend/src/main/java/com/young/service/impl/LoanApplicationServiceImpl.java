@@ -39,13 +39,11 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void applyLoan(Long userId, LoanApplication app) {
-        // 实名前置拦截：客户必须完成 KYC 实名认证且审核通过
         UserProfile profile = userProfileMapper.selectByUserId(userId);
         if (profile == null || profile.getStatus() != 1) {
             throw new RuntimeException("请先完成实名认证并获得审批通过，方可发起贷款申请！");
         }
 
-        // 尝试冻结可用额度（不足则会因为条件未满足导致影响行数为0）
         int updated = creditMapper.freezeAmount(userId, app.getAmount());
         if (updated == 0) {
             throw new RuntimeException("操作被拦截：当前可用信用额度不足，或您的账户已被风控冻结！");
@@ -55,7 +53,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         app.setStatus(0);
         app.setApplyTime(new Date());
         
-        // 若用户选择了产品，则从产品配置中覆盖年化利率，确保利率一致性
         if (app.getProductId() != null) {
             LoanProduct product = productMapper.selectById(app.getProductId());
             if (product != null) {
@@ -74,12 +71,11 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             throw new RuntimeException("审批流异常：找不到该申请或状态不在待审态");
         }
 
-        // 执行放款：将状态改为 1-审核通过
         app.setStatus(1);
         app.setAuditTime(new Date());
         applicationMapper.updateStatus(app);
 
-        // 生成流水账单计划
+        // 生成还款计划
         List<RepaymentPlan> plans = calculator.generateEqualInstallmentPlan(
                 app.getId(),
                 app.getUserId(),
@@ -99,12 +95,10 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         if (app == null || app.getStatus() != 0)
             return;
 
-        // 驳回状态
         app.setStatus(2);
         app.setAuditTime(new Date());
         applicationMapper.updateStatus(app);
 
-        // 解冻返还额度
         creditMapper.unfreezeAmount(app.getUserId(), app.getAmount());
     }
 

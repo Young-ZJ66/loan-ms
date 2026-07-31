@@ -1,7 +1,7 @@
 package com.young.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.young.common.Result;
 import com.young.pojo.LoanApplication;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Api(tags = "贷款申请管理")
+@Tag(name = "贷款申请管理")
 @RestController
 @RequestMapping("/api/loan")
 public class LoanApplicationController {
@@ -22,7 +22,7 @@ public class LoanApplicationController {
     /**
      * [客户端] 提交贷款申请
      */
-    @ApiOperation("提交贷款申请")
+    @Operation(summary = "提交贷款申请")
     @PostMapping("/apply")
     public Result<?> applyLoan(@RequestAttribute("userId") Long userId, @RequestBody LoanApplication application) {
         loanService.applyLoan(userId, application);
@@ -32,7 +32,7 @@ public class LoanApplicationController {
     /**
      * [管理端] 获取所有待审批的融资申请
      */
-    @ApiOperation("查询待审批贷款列表（管理端）")
+    @Operation(summary = "查询待审批贷款列表（管理端）")
     @GetMapping("/pending")
     public Result<?> listPending(@RequestAttribute("role") Integer role) {
         if (role == null || role != 1) {
@@ -45,7 +45,7 @@ public class LoanApplicationController {
     /**
      * [管理端] 审批通过并放款
      */
-    @ApiOperation("审批通过并放款")
+    @Operation(summary = "审批通过并放款")
     @PostMapping("/approve/{appId}")
     public Result<?> approveAndDisburse(
             @RequestAttribute("userId") Long adminId, 
@@ -61,7 +61,7 @@ public class LoanApplicationController {
     /**
      * [管理端] 驳回贷款
      */
-    @ApiOperation("驳回贷款申请")
+    @Operation(summary = "驳回贷款申请")
     @PostMapping("/reject/{appId}")
     public Result<?> rejectLoan(@RequestAttribute("role") Integer role, @PathVariable Long appId) {
         if (role == null || role != 1) {
@@ -74,13 +74,12 @@ public class LoanApplicationController {
     /**
      * [双视界] 获取贷款列表 (供管理端)
      */
-    @ApiOperation("查询贷款申请列表")
+    @Operation(summary = "查询贷款申请列表")
     @GetMapping("/list")
     public Result<List<LoanApplication>> getList(
             @RequestAttribute("userId") Long loggedUserId,
             @RequestAttribute("role") Integer role,
             @RequestParam(required = false) Long userId) {
-        // 如果不是管理员，且试图查询别人的或者全部的数据，则判定为水平越权访问
         if ((role == null || role != 1) && (userId == null || !userId.equals(loggedUserId))) {
             return Result.error(403, "越权访问：您无权查询其他用户的贷款申请列表");
         }
@@ -91,7 +90,7 @@ public class LoanApplicationController {
     /**
      * [客户端] 获取我的贷款申请记录
      */
-    @ApiOperation("查询我的贷款申请列表")
+    @Operation(summary = "查询我的贷款申请列表")
     @GetMapping("/my")
     public Result<List<LoanApplication>> getMyList(@RequestAttribute("userId") Long userId) {
         List<LoanApplication> list = loanService.getApplicationList(userId);

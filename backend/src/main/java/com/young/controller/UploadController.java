@@ -1,7 +1,7 @@
 package com.young.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.young.common.Result;
 import org.springframework.web.bind.annotation.*;
@@ -11,12 +11,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
-@Api(tags = "文件上传管理")
+@Tag(name = "文件上传管理")
 @RestController
 @RequestMapping("/api/upload")
 public class UploadController {
 
-    @ApiOperation("上传证件影像文件")
+    @Operation(summary = "上传证件影像文件")
     @PostMapping
     public Result<String> upload(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty())
@@ -27,7 +27,6 @@ public class UploadController {
                 ? originalFilename.substring(originalFilename.lastIndexOf("."))
                 : ".jpg";
 
-        // 后缀白名单过滤，只允许常见的图片类型，防御 Webshell 与恶意脚本上传
         String lowerExt = ext.toLowerCase();
         if (!java.util.List.of(".jpg", ".jpeg", ".png", ".gif").contains(lowerExt)) {
             return Result.error("文件上传失败：不支持的文件类型！仅支持上传 JPG, JPEG, PNG, GIF 格式的图片文件。");
@@ -35,7 +34,6 @@ public class UploadController {
 
         String newName = UUID.randomUUID().toString().replace("-", "") + lowerExt;
 
-        // 统一存放在项目根目录外的 uploads 目录下，方便静态资源代理和持久化
         String destDirPath = System.getProperty("user.dir") + "/uploads/";
         File dir = new File(destDirPath);
         if (!dir.exists()) {
@@ -44,7 +42,6 @@ public class UploadController {
 
         try {
             file.transferTo(new File(destDirPath + newName));
-            // spring.web.resources.static-locations 会代理 /uploads/** 指向实际路劲
             return Result.success("/uploads/" + newName);
         } catch (IOException e) {
             e.printStackTrace();

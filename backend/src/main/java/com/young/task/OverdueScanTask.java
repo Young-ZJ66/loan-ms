@@ -20,7 +20,6 @@ import java.util.List;
 
 /**
  * 逾期账单扫描定时任务
- * 说明：目前配置为每分钟执行，以便于部署初期监控；常规生产环境推荐调整为 "0 0 1 * * ?"（每日凌晨1点）
  */
 @Component
 public class OverdueScanTask {
@@ -35,52 +34,45 @@ public class OverdueScanTask {
 
     /**
      * 主扫描任务：每日凌晨1点执行
-     * cron："0 0 1 * * ?"
      */
     @Scheduled(cron = "0 0 1 * * ?")
     public void scanOverduePlans() {
         log.info("[系统跑批] 开始执行逾期账单扫描 + 即将逾期提醒...");
-        Date today = new Date();
-        LocalDate todayLocal = today.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate todayLocal = LocalDate.now();
+        Date today = Date.from(todayLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-        // ① 逾期罚息累计处理
         List<RepaymentPlan> overduePlans = planMapper.selectOverduePlans(today);
         for (RepaymentPlan plan : overduePlans) {
             LocalDate dueLocal = plan.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             long daysLate = ChronoUnit.DAYS.between(dueLocal, todayLocal);
             if (daysLate <= 0) continue;
-            
-            // 使用幂等计息法：重新计算到今天为止的全部单利罚息并覆盖
+
             BigDecimal baseAmount = plan.getPrincipal().add(plan.getInterest());
             BigDecimal totalPenalty = calculator.calculateTotalPenalty(baseAmount, (int) daysLate);
-            
+
             plan.setPenalty(totalPenalty);
-            // 账单最新总额 = 原始本息 + 计算到今天的罚息总和
             plan.setTotalAmount(baseAmount.add(totalPenalty));
-            plan.setStatus(2); // 置为逾期中
+            plan.setStatus(2);
             planMapper.updateOverduePlan(plan);
             log.info("逾期计划 ID={} 逾期{}天，重新核算罚息 {}元，最新应还 {}元",
                     plan.getId(), daysLate, totalPenalty, plan.getTotalAmount());
         }
         log.info("[逾期扫描] 本轮共处理 {} 条逾期账单", overduePlans.size());
 
-        // ② 即将逾期提醒：提前 3 天推送站内消息（去重：仅在未读消息中无同一期次时才推送）
-        List<RepaymentPlan> allPendingPlans = planMapper.selectOverduePlans(
-                // 取3天后那一时刻作为截止线，抓取3天内即将到期的"待还"账单
-                java.util.Date.from(todayLocal.plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant())
-        );
-        for (RepaymentPlan plan : allPendingPlans) {
-            if (plan.getStatus() != 0) continue; // 只给"待还"状态的发提醒
+        Date fromDate = Date.from(todayLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date toDate = Date.from(todayLocal.plusDays(4).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<RepaymentPlan> upcomingPlans = planMapper.selectUpcomingPlans(fromDate, toDate);
+
+        for (RepaymentPlan plan : upcomingPlans) {
             LocalDate dueLocal = plan.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             long daysLeft = ChronoUnit.DAYS.between(todayLocal, dueLocal);
             if (daysLeft >= 0 && daysLeft <= 3) {
-                // 检查是否已发过针对该贷款该期次的到期提醒，避免重复发送
                 boolean alreadySent = messageMapper.selectByUserId(plan.getUserId()).stream()
-                        .anyMatch(m -> "还款温馨提醒".equals(m.getTitle()) 
+                        .anyMatch(m -> "还款温馨提醒".equals(m.getTitle())
                                 && m.getContent().contains(String.format("第 %d 期还款账单", plan.getTermIndex()))
                                 && m.getContent().contains(dueLocal.toString()));
                 if (alreadySent) {
-                    log.info("用户 {} 的第{}期还款账单（到期日 {}）已发送过到期提醒，本次跳过", 
+                    log.info("用户 {} 的第{}期还款账单（到期日 {}）已发送过到期提醒，本次跳过",
                             plan.getUserId(), plan.getTermIndex(), dueLocal);
                     continue;
                 }
@@ -96,10 +88,11 @@ public class OverdueScanTask {
                 log.info("已向用户 {} 推送第{}期即将逾期提醒，距到期还有{}天", plan.getUserId(), plan.getTermIndex(), daysLeft);
             }
         }
+        log.info("[到期提醒] 本轮共扫描 {} 条即将到期待还账单", upcomingPlans.size());
     }
 
     /**
-     * 手动触发逾期扫描（供运营后台按需即时清算）
+     * 手动触发逾期扫描
      */
     public void triggerManually() {
         scanOverduePlans();

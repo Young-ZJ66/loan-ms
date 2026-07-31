@@ -16,11 +16,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 捕获业务异常（用户名密码错、账单不存在等），返回 code=400 + 友好消息
+     * 捕获业务异常
+     */
+    @ExceptionHandler(BusinessException.class)
+    public Result<?> handleBusinessException(BusinessException e) {
+        log.warn("[业务异常] {}", e.getMessage());
+        return Result.error(400, e.getMessage() == null ? "操作失败" : e.getMessage());
+    }
+
+    /**
+     * 捕获其他运行时异常
      */
     @ExceptionHandler(RuntimeException.class)
     public Result<?> handleRuntimeException(RuntimeException e) {
-        log.warn("[业务异常] {}", e.getMessage());
+        log.warn("[运行时异常] {}", e.getMessage());
         return Result.error(400, e.getMessage() == null ? "操作失败" : e.getMessage());
     }
 

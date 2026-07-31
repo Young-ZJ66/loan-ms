@@ -33,3 +33,18 @@ logging:
     org.springframework.jdbc.support.JdbcTransactionManager: debug
 
 uploadDir: file:./uploads/
+
+# JWT 认证配置
+jwt:
+  # HS256 签名密钥
+  secret: bXlTdXBlclNlY3JldEtleUZvckpXVFRva2VuMjAyNkF1cmFTeXN0ZW1OZWVkczMyQnl0ZXMhQA==
+
+# SpringDoc OpenAPI 配置
+springdoc:
+  swagger-ui:
+    path: /doc.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.young.controller

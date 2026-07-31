@@ -1,7 +1,7 @@
 package com.young.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.young.common.Result;
 import com.young.pojo.CreditApplication;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Api(tags = "授信频度申请管理")
+@Tag(name = "授信频度申请管理")
 @RestController
 @RequestMapping("/api/credit-app")
 public class CreditApplicationController {
@@ -23,7 +23,7 @@ public class CreditApplicationController {
     /**
      * [客户端] 提交额度申请
      */
-    @ApiOperation("提交额度申请")
+    @Operation(summary = "提交额度申请")
     @PostMapping("/apply")
     public Result<?> apply(@RequestAttribute("userId") Long userId, 
                            @RequestParam BigDecimal amount) {
@@ -37,7 +37,7 @@ public class CreditApplicationController {
     /**
      * [客户端] 查询自己当前是否有尚未结案的提额申请
      */
-    @ApiOperation("查询我的待审申请")
+    @Operation(summary = "查询我的待审申请")
     @GetMapping("/my_pending")
     public Result<CreditApplication> getMyPending(@RequestAttribute("userId") Long userId) {
         return Result.success(applicationService.getMyLatestPending(userId));
@@ -46,7 +46,7 @@ public class CreditApplicationController {
     /**
      * [管理端] 获取所有用户的待审批建额/提额请求单
      */
-    @ApiOperation("查询待审批申请列表（管理端）")
+    @Operation(summary = "查询待审批申请列表（管理端）")
     @GetMapping("/pending")
     public Result<List<CreditApplication>> getPendingList(@RequestAttribute("role") Integer role) {
         if (role == null || role != 1) {
@@ -58,7 +58,7 @@ public class CreditApplicationController {
     /**
      * [管理端] 审批通过并发放最终授信额度（支持管理员修正预期金额）
      */
-    @ApiOperation("审批通过并下发额度")
+    @Operation(summary = "审批通过并下发额度")
     @PostMapping("/approve/{id}")
     public Result<?> approve(@PathVariable Long id, 
                              @RequestParam BigDecimal approveAmount, 
@@ -77,7 +77,7 @@ public class CreditApplicationController {
     /**
      * [管理端] 驳回提额申请
      */
-    @ApiOperation("驳回提额申请")
+    @Operation(summary = "驳回提额申请")
     @PostMapping("/reject/{id}")
     public Result<?> reject(@PathVariable Long id, 
                             @RequestAttribute("userId") Long adminId,

@@ -2,8 +2,8 @@
   <div class="page-container flex-center">
     <el-card class="kyc-card glass-panel dark-mode-card" shadow="hover">
       <div class="card-header">
-        <h2>实名与放款资料补充</h2>
-        <p>为保障资金安全，请提供您的真实资料并绑定放款卡</p>
+        <h2>实名认证</h2>
+        <p>请填写真实身份信息</p>
       </div>
 
       <!-- 结果展示区 -->
@@ -13,8 +13,8 @@
             <CircleCheck v-else-if="profile.status === 1" />
             <CircleClose v-else />
          </el-icon>
-         <h3>{{ profile.status === 0 ? '资料审核中' : (profile.status === 1 ? '实名已通过' : '审核被驳回') }}</h3>
-         <p v-if="profile.status === 1" style="color: #67c23a; margin-top:10px;">您可以前往【申请贷款】发起融资。</p>
+         <h3>{{ profile.status === 0 ? '审核中' : (profile.status === 1 ? '已通过' : '已驳回') }}</h3>
+         <p v-if="profile.status === 1" style="color: #67c23a; margin-top:10px;">您可以前往【申请贷款】发起贷款申请。</p>
          <div v-if="profile.status === 2" style="margin-top:20px;">
             <el-button type="primary" color="#626aef" style="color:white; width:200px" size="large" @click="reSubmit">重新提交资料</el-button>
          </div>
@@ -86,7 +86,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="银行卡号" prop="bankCard">
-              <el-input v-model="form.bankCard" placeholder="输入接收放款的借记卡号" size="large"></el-input>
+              <el-input v-model="form.bankCard" placeholder="请输入银行卡号" size="large"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -106,7 +106,7 @@
 
         <el-form-item>
           <el-button type="primary" size="large" @click="submit" :loading="submitting" class="submit-btn" color="#626aef" style="color:white;">
-            确认提交并录入档案
+            确认提交认证
           </el-button>
         </el-form-item>
       </el-form>
@@ -185,7 +185,7 @@ const submit = async () => {
       submitting.value = true
       try {
         await request.post('/kyc/submit', form.value)
-        ElMessage.success('四要素资料与影像证件已空投至人工核查席！')
+        ElMessage.success('实名认证资料已提交，等待审核。')
         loadData()
       } finally {
         submitting.value = false

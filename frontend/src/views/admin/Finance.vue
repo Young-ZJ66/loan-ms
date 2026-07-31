@@ -2,15 +2,15 @@
   <div class="page-container glass-panel">
     <div class="header-banner">
       <h2>财务中心</h2>
-      <p>全平台还款计划履约状态 & 历史入账明细</p>
+      <p>还款计划与入账明细</p>
     </div>
 
     <!-- 切换 Tab -->
     <el-tabs v-model="activeTab" class="dark-tabs">
       <el-tab-pane label="还款计划总览" name="plans">
-        <el-table :data="plans" style="width: 100%" class="custom-table admin-table" v-loading="loadingPlans">
+        <el-table :data="pagedPlans" style="width: 100%" class="custom-table admin-table" v-loading="loadingPlans">
           <el-table-column prop="id" label="计划ID" min-width="80" />
-          <el-table-column prop="loanId" label="合约ID" min-width="80" />
+          <el-table-column prop="loanId" label="贷款ID" min-width="80" />
           <el-table-column prop="remark" label="客户姓名" min-width="120" />
           <el-table-column label="期次" min-width="80">
             <template #default="scope">第 {{ scope.row.termIndex }} 期</template>
@@ -26,7 +26,7 @@
           <el-table-column prop="dueDate" label="最后还款日" min-width="140" sortable>
             <template #default="scope">{{ formatDate(scope.row.dueDate) }}</template>
           </el-table-column>
-          <el-table-column label="履约状态" min-width="110">
+          <el-table-column label="还款状态" min-width="110">
             <template #default="scope">
               <el-tag :type="scope.row.status === 0 ? 'warning' : (scope.row.status === 1 ? 'success' : 'danger')" effect="dark">
                 {{ scope.row.status === 0 ? '待还款' : (scope.row.status === 1 ? '已结清' : `逾期 ${getOverdueDays(scope.row.dueDate)} 天`) }}
@@ -34,13 +34,16 @@
             </template>
           </el-table-column>
         </el-table>
+        <div class="pagination-wrap">
+          <el-pagination v-model:current-page="plansPage" :page-size="10" :total="plans.length" layout="total, prev, pager, next" background />
+        </div>
       </el-tab-pane>
 
       <el-tab-pane label="历史入账明细" name="records">
-        <el-table :data="records" style="width: 100%" class="custom-table admin-table" v-loading="loadingRecords">
+        <el-table :data="pagedRecords" style="width: 100%" class="custom-table admin-table" v-loading="loadingRecords">
           <el-table-column prop="id" label="流水ID" min-width="80" />
           <el-table-column prop="userId" label="用户ID" min-width="80" />
-          <el-table-column prop="loanId" label="合约ID" min-width="80" />
+          <el-table-column prop="loanId" label="贷款ID" min-width="80" />
           <el-table-column prop="payAmount" label="入账金额(元)" min-width="140" />
           <el-table-column label="还款类型" min-width="130">
             <template #default="scope">
@@ -54,17 +57,17 @@
           </el-table-column>
           <el-table-column prop="remark" label="备注" />
         </el-table>
-      </el-tab-pane>
-      <!-- 第三个 Tab：逾期催收台 -->
-      <el-tab-pane name="overdue">
-        <template #label>逾期催收台 <span class="tab-badge" v-if="badges.overdue > 0">{{badges.overdue}}</span></template>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:10px">
-          <el-button type="warning" plain size="small" @click="triggerOverdue">逾期扫描</el-button>
+        <div class="pagination-wrap">
+          <el-pagination v-model:current-page="recordsPage" :page-size="10" :total="records.length" layout="total, prev, pager, next" background />
         </div>
-        <el-table :data="overduePlans" style="width: 100%" class="custom-table admin-table" v-loading="loadingOverdue">
+      </el-tab-pane>
+      <!-- 第三个 Tab：逾期明细 -->
+      <el-tab-pane name="overdue">
+        <template #label>逾期明细 <span class="tab-badge" v-if="badges.overdue > 0">{{badges.overdue}}</span></template>
+        <el-table :data="pagedOverduePlans" style="width: 100%" class="custom-table admin-table" v-loading="loadingOverdue">
           <el-table-column prop="id" label="计划ID" min-width="80" />
           <el-table-column prop="remark" label="客户姓名" min-width="110" />
-          <el-table-column prop="loanId" label="合约ID" min-width="80" />
+          <el-table-column prop="loanId" label="贷款ID" min-width="80" />
           <el-table-column label="期次" min-width="80">
             <template #default="scope">第 {{ scope.row.termIndex }} 期</template>
           </el-table-column>
@@ -79,15 +82,18 @@
           </el-table-column>
           <el-table-column label="操作" min-width="120">
             <template #default="scope">
-              <el-button size="small" type="danger" @click="openCollect(scope.row)">发起催收</el-button>
+              <el-button size="small" type="danger" @click="openCollect(scope.row)">催收</el-button>
             </template>
           </el-table-column>
         </el-table>
+        <div class="pagination-wrap">
+          <el-pagination v-model:current-page="overduePage" :page-size="10" :total="overduePlans.length" layout="total, prev, pager, next" background />
+        </div>
       </el-tab-pane>
     </el-tabs>
 
     <!-- 催收弹窗 -->
-    <el-dialog v-model="collectVisible" title="发起催收动作" width="460px" custom-class="dark-dialog">
+    <el-dialog v-model="collectVisible" title="发起催收" width="460px" custom-class="dark-dialog">
       <el-form :model="collectForm" label-width="90px">
         <el-form-item label="逾期账单">
           <el-input :value="`ID:${collectForm.planId}  第${collectForm.termIndex}期  应还${collectForm.totalAmount}元`" disabled />
@@ -112,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 
@@ -134,6 +140,11 @@ const plans = ref([])
 const records = ref([])
 const loadingPlans = ref(false)
 const loadingRecords = ref(false)
+const plansPage = ref(1)
+const recordsPage = ref(1)
+const overduePage = ref(1)
+const pagedPlans = computed(() => { const s = (plansPage.value - 1) * 10; return plans.value.slice(s, s + 10) })
+const pagedRecords = computed(() => { const s = (recordsPage.value - 1) * 10; return records.value.slice(s, s + 10) })
 
 const formatDate = (t) => {
   if (!t) return '-'
@@ -177,6 +188,7 @@ const loadRecords = async () => {
 
 const overduePlans = ref([])
 const loadingOverdue = ref(false)
+const pagedOverduePlans = computed(() => { const s = (overduePage.value - 1) * 10; return overduePlans.value.slice(s, s + 10) })
 const collectVisible = ref(false)
 const collectLoading = ref(false)
 const collectForm = ref({ planId: null, termIndex: 0, totalAmount: 0, method: '站内信', result: '' })
@@ -191,8 +203,16 @@ const loadOverduePlans = async () => {
 
 const triggerOverdue = async () => {
   await request.get('/finance/trigger-overdue')
-  ElMessage.success('逾期扫描已触发，将自动刷新逾期列表…')
-  setTimeout(loadOverduePlans, 1500)
+}
+
+const loadOverdueTab = async () => {
+  loadingOverdue.value = true
+  try {
+    await triggerOverdue()
+    const res = await request.get('/collection/overdue-plans')
+    overduePlans.value = res.data || []
+    fetchBadges()
+  } finally { loadingOverdue.value = false }
 }
 
 const openCollect = (row) => {
@@ -204,17 +224,17 @@ const submitCollect = async () => {
   collectLoading.value = true
   try {
     await request.post('/collection/action', collectForm.value)
-    ElMessage.success('催收记录已入档，已将站内催收通知发送给贷款人！')
+    ElMessage.success('催收记录已保存，已通知客户。')
     collectVisible.value = false
     loadOverduePlans()
     dispatchRefresh()
   } finally { collectLoading.value = false }
 }
 
-// 切换视图时按需加载各类资产数据
+// 切换视图时按需加载数据
 watch(activeTab, (val) => {
   if (val === 'records' && records.value.length === 0) loadRecords()
-  if (val === 'overdue' && overduePlans.value.length === 0) loadOverduePlans()
+  if (val === 'overdue') loadOverdueTab()
 })
 
 onMounted(() => {
@@ -240,8 +260,8 @@ onMounted(() => {
 :deep(.el-tabs__nav-wrap::after) { background-color: rgba(255,255,255,0.1) !important; }
 
 .tab-badge {
-  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明不透明度至 0.65 */
-  color: #ffffff !important; /* 亮白字 */
+  background-color: rgba(245, 108, 108, 0.65) !important;
+  color: #ffffff !important;
   border: 1px solid rgba(245, 108, 108, 0.8) !important;
   border-radius: 10px;
   padding: 0 6px;
@@ -254,5 +274,11 @@ onMounted(() => {
   align-items: center;
   margin-left: 4px;
   font-weight: bold;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

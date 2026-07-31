@@ -1,99 +1,78 @@
 package com.young.controller;
 
+import com.young.common.RequireRole;
 import com.young.common.Result;
-import com.young.mapper.LoanApplicationMapper;
-import com.young.mapper.RepaymentPlanMapper;
-import com.young.mapper.SysUserMapper;
-import com.young.mapper.UnfreezeApplicationMapper;
+import com.young.service.AdminStatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 
 /**
  * 仪表盘与数据中心控制器
  * 提供全局经营数据的统计能力及各项管理指标计算接口
  */
-@Api(tags = "数据监控看板管理")
+@Tag(name = "数据监控看板管理")
 @RestController
 @RequestMapping("/api/admin/stat")
 public class AdminStatController {
 
     @Autowired
-    private SysUserMapper sysUserMapper;
-    @Autowired
-    private LoanApplicationMapper loanMapper;
-    @Autowired
-    private RepaymentPlanMapper planMapper;
+    private AdminStatService adminStatService;
 
     /**
      * [管理端] 获取监控大盘汇总数据（一次性返回所有指标，减少多次请求）
      */
-    @ApiOperation("获取宏观大盘汇总指标")
+    @Operation(summary = "获取宏观大盘汇总指标")
+    @RequireRole
     @GetMapping("/overview")
     public Result<Map<String, Object>> getOverview() {
-        Map<String, Object> data = new HashMap<>();
-        // 1. 总客户量（排除管理员账号）
-        data.put("totalUsers", sysUserMapper.countUsers());
-        // 2. 今日新增申请数
-        data.put("todayApplications", loanMapper.countTodayApplications());
-        // 3. 全平台已放款总金额
-        BigDecimal disbursed = loanMapper.sumDisbursed();
-        data.put("totalDisbursed", disbursed != null ? disbursed : BigDecimal.ZERO);
-        // 4. 全平台逾期坏账金额
-        BigDecimal overdue = planMapper.sumOverdueAmount();
-        data.put("totalOverdue", overdue != null ? overdue : BigDecimal.ZERO);
-        return Result.success(data);
+        return Result.success(adminStatService.getOverview());
     }
 
     /**
      * 获取单一的用户总数统计
      * 为了兼容历史客户端而保留的基础接口
      */
-    @ApiOperation("获取注册用户基数")
+    @Operation(summary = "获取注册用户基数")
+    @RequireRole
     @GetMapping("/users/count")
     public Result<Integer> getUserCount() {
-        return Result.success(sysUserMapper.countUsers());
+        return Result.success(adminStatService.getUserCount());
     }
-
-    @Autowired
-    private com.young.mapper.UserProfileMapper userProfileMapper;
-    @Autowired
-    private com.young.mapper.CreditApplicationMapper creditApplicationMapper;
-    @Autowired
-    private UnfreezeApplicationMapper unfreezeApplicationMapper;
 
     /**
      * [管理端] 获取左侧菜单栏各种待办小红点数字
      */
-    @ApiOperation("获取待审批红点数量聚合")
+    @Operation(summary = "获取待审批红点数量聚合")
+    @RequireRole
     @GetMapping("/badges")
     public Result<Map<String, Object>> getBadges() {
-        Map<String, Object> badges = new HashMap<>();
+        return Result.success(adminStatService.getBadges());
+    }
 
-        // 待审核的实名资料 (客户管理)
-        badges.put("kyc", userProfileMapper.selectPendingList().size());
+    /**
+     * [管理端] 获取贷款产品分布（按产品类型统计申请笔数）
+     */
+    @Operation(summary = "获取贷款产品分布")
+    @RequireRole
+    @GetMapping("/product-distribution")
+    public Result<List<Map<String, Object>>> getProductDistribution() {
+        return Result.success(adminStatService.getProductDistribution());
+    }
 
-        // 待审批的贷款申请
-        int loanCount = (int) loanMapper.selectList(null).stream().filter(l -> l.getStatus() == 0).count();
-        // 待审批的提额申请
-        int creditCount = creditApplicationMapper.selectPendingList().size();
-        // 待审批的解冻申请
-        int unfreezeCount = unfreezeApplicationMapper.countPending();
-
-        badges.put("loan", loanCount);
-        badges.put("credit", creditCount);
-        badges.put("unfreeze", unfreezeCount);
-
-        // 处于逾期状态的账单 (财务中心)
-        badges.put("overdue", planMapper.selectOverduePlans(new java.util.Date()).size());
-
-        return Result.success(badges);
+    /**
+     * [管理端] 获取近7日授信与款项流动趋势
+     */
+    @Operation(summary = "获取近7日趋势数据")
+    @RequireRole
+    @GetMapping("/weekly-trend")
+    public Result<List<Map<String, Object>>> getWeeklyTrend() {
+        return Result.success(adminStatService.getWeeklyTrend());
     }
 }

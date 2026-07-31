@@ -4,7 +4,7 @@
     <div class="header-banner">
       <div class="header-content">
         <h2>运营数据中心</h2>
-        <p>全平台核心授信、款项放款及逾期数据实时监控</p>
+        <p>全平台贷款与逾期数据监控</p>
       </div>
       <div class="time-badge">
         <span>数据刷新时间：{{ refreshTime }}</span>
@@ -29,11 +29,11 @@
       </el-col>
     </el-row>
 
-    <!-- 待办追踪工作台 -->
+    <!-- 待办事项 -->
     <div class="todo-section glass-panel" v-loading="badgeLoading">
       <div class="section-title">
         <span class="indicator"></span>
-        <h3>审核与风控待办追踪</h3>
+        <h3>待办事项</h3>
       </div>
       <el-row :gutter="20" class="todo-grid">
         <el-col :xs="12" :sm="8" :md="4" v-for="(badge, bIdx) in todoBadges" :key="bIdx">
@@ -74,7 +74,7 @@
       <el-col :span="24">
         <div class="chart-wrapper glass-panel">
           <div class="chart-header">
-            <h4>平台近7日授信与款项流动趋势</h4>
+            <h4>近7日放款与申请趋势</h4>
           </div>
           <div id="line-chart" class="chart-dom large-chart"></div>
         </div>
@@ -103,6 +103,11 @@ const badges = ref({
     kyc: 0, loan: 0, credit: 0, unfreeze: 0, overdue: 0
 })
 
+// 产品分布数据
+const productDist = ref([])
+// 近7日趋势数据
+const weeklyTrend = ref([])
+
 const getFormatTime = () => {
   const d = new Date()
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`
@@ -117,7 +122,7 @@ const cardConfigs = computed(() => [
 
 const todoBadges = computed(() => [
   { name: '待审实名', value: badges.value.kyc, route: '/admin/kyc', icon: Stamp },
-  { name: '待审放款', value: badges.value.loan, route: '/admin/loan', icon: Wallet },
+  { name: '待审贷款', value: badges.value.loan, route: '/admin/loan', icon: Wallet },
   { name: '待审提额', value: badges.value.credit, route: '/admin/finance', icon: TrendCharts },
   { name: '待审解冻', value: badges.value.unfreeze, route: '/admin/finance', icon: RefreshRight },
   { name: '逾期催收', value: badges.value.overdue, route: '/admin/finance', icon: Bell }
@@ -183,7 +188,7 @@ const initCharts = () => {
             }
           },
           data: [
-            { value: activeLoan, name: '正常履约中金额', itemStyle: { color: '#10b981' } },
+            { value: activeLoan, name: '正常还款中', itemStyle: { color: '#10b981' } },
             { value: stats.value.totalOverdue, name: '逾期坏账金额', itemStyle: { color: '#ef4444' } }
           ]
         }
@@ -219,12 +224,11 @@ const initCharts = () => {
             color: textPrimary,
             formatter: '{b}\n{d}%'
           },
-          data: [
-            { value: 45, name: '惠民消费贷', itemStyle: { color: '#6366f1' } },
-            { value: 30, name: '尊享经营贷', itemStyle: { color: '#3b82f6' } },
-            { value: 15, name: '安居按揭贷', itemStyle: { color: '#10b981' } },
-            { value: 25, name: '车主专享贷', itemStyle: { color: '#f59e0b' } }
-          ]
+          data: productDist.value.length > 0 ? productDist.value.map((item, idx) => ({
+            value: item.value,
+            name: item.name,
+            itemStyle: { color: ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 6] }
+          })) : [{ value: 0, name: '暂无数据', itemStyle: { color: '#6366f1' } }]
         }
       ]
     })
@@ -234,11 +238,26 @@ const initCharts = () => {
   const lineDom = document.getElementById('line-chart')
   if (lineDom) {
     const lineChart = window.echarts.init(lineDom)
+    // 构建近7日日期标签
     const dateLabels = []
     for(let i=6; i>=0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       dateLabels.push(`${d.getMonth() + 1}/${d.getDate()}`)
+    }
+    // 从后端趋势数据中提取每日放款量和申请笔数
+    const disbursedData = []
+    const countData = []
+    // 将后端数据按日期映射
+    const trendMap = {}
+    weeklyTrend.value.forEach(item => {
+      const d = new Date(item.date)
+      trendMap[`${d.getMonth() + 1}/${d.getDate()}`] = item
+    })
+    for (const label of dateLabels) {
+      const item = trendMap[label]
+      disbursedData.push(item ? Number(item.dailyDisbursed) : 0)
+      countData.push(item ? Number(item.dailyCount) : 0)
     }
 
     lineChart.setOption({
@@ -289,7 +308,7 @@ const initCharts = () => {
               { offset: 1, color: 'transparent' }
             ])
           },
-          data: [12000, 34000, 21000, 56000, 48000, 31000, stats.value.totalDisbursed > 0 ? stats.value.totalDisbursed % 50000 : 25000]
+          data: disbursedData
         },
         {
           name: '每日申请笔数',
@@ -304,7 +323,7 @@ const initCharts = () => {
               { offset: 1, color: 'transparent' }
             ])
           },
-          data: [5, 12, 8, 15, 11, 9, stats.value.todayApplications > 0 ? stats.value.todayApplications : 6]
+          data: countData
         }
       ]
     })
@@ -323,11 +342,13 @@ onMounted(async () => {
     badgeLoading.value = true
     refreshTime.value = getFormatTime()
     try {
-        const [r1, r2, r3, r4] = await Promise.all([
+        const [r1, r2, r3, r4, r5, r6] = await Promise.all([
             request.get('/admin/stat/overview'),
             request.get('/kyc/pending'),
             request.get('/loan/pending'),
-            request.get('/admin/stat/badges')
+            request.get('/admin/stat/badges'),
+            request.get('/admin/stat/product-distribution'),
+            request.get('/admin/stat/weekly-trend')
         ])
         
         if (r1.code === 200) {
@@ -347,6 +368,10 @@ onMounted(async () => {
           badges.value.unfreeze = r4.data.unfreeze
           badges.value.overdue = r4.data.overdue
         }
+
+        // 加载图表数据
+        if (r5.code === 200) productDist.value = r5.data || []
+        if (r6.code === 200) weeklyTrend.value = r6.data || []
 
         nextTick(() => {
           initCharts()
@@ -580,7 +605,7 @@ onMounted(async () => {
 }
 
 .todo-badge.warning-badge {
-  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明不透明度至 0.65 */
+  background-color: rgba(245, 108, 108, 0.65) !important;
   color: #ffffff !important;
   border: 1px solid rgba(245, 108, 108, 0.8) !important;
   box-shadow: 0 0 6px rgba(245, 108, 108, 0.3);

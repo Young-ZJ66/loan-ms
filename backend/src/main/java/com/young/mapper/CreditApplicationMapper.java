@@ -12,6 +12,6 @@ public interface CreditApplicationMapper {
     CreditApplication selectById(Long id);
     CreditApplication selectLatestPendingByUserId(Long userId);
     
-    // 查询所有待审核的额度申请（联表展示客户实名信息）
+    /** 查询待审核的额度申请 */
     List<CreditApplication> selectPendingList();
 }

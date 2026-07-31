@@ -12,6 +12,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 定时清理 uploads 目录下的孤儿文件
+ */
 @Slf4j
 @Component
 public class FileCleanupTask {
@@ -20,19 +23,18 @@ public class FileCleanupTask {
     private UserProfileMapper profileMapper;
 
     /**
-     * 每天凌晨2点执行一次：清理 /uploads 目录下多余的冗余图片
-     * （防呆机制：仅清理未被数据库关联且存活时间超过 24 小时的临时文件）
+     * 每天凌晨2点执行
      */
     @Scheduled(cron = "0 0 2 * * ?")
     public void cleanupOrphanedFiles() {
-        log.info("开始执行磁盘归档冗余文件自检清理任务...");
+        log.info("开始执行冗余文件清理任务...");
         String destDirPath = System.getProperty("user.dir") + "/uploads/";
         File dir = new File(destDirPath);
         if (!dir.exists() || !dir.isDirectory()) {
             return;
         }
 
-        // 1. 获取数据库中所有已关联的文件全路径名
+        // 收集数据库中已引用的文件路径
         List<UserProfile> profiles = profileMapper.selectAllList();
         Set<String> usedFiles = new HashSet<>();
         for (UserProfile profile : profiles) {
@@ -42,7 +44,6 @@ public class FileCleanupTask {
                 usedFiles.add(profile.getIdCardBack());
         }
 
-        // 2. 遍历物理硬盘的实际文件
         File[] files = dir.listFiles();
         if (files == null)
             return;
@@ -52,20 +53,18 @@ public class FileCleanupTask {
 
         for (File file : files) {
             if (file.isFile()) {
-                // 拼接数据库中存储的相对路径格式："/uploads/xxxx.jpg"
                 String relativePath = "/uploads/" + file.getName();
 
-                // 如果文件未被业务记录引用，并且上传时间在 24 小时之前，则作为闲置赘余数据硬删除
+                // 清理未被引用且超过24小时的文件
                 if (!usedFiles.contains(relativePath)) {
                     if (now - file.lastModified() > 24 * 60 * 60 * 1000L) {
                         if (file.delete()) {
                             deletedCount++;
-                            log.debug("成功抛弃过期的脏数据切片: {}", file.getName());
                         }
                     }
                 }
             }
         }
-        log.info("冗余文件清理执行完毕，本次共释放销毁了 {} 个废弃图像。", deletedCount);
+        log.info("冗余文件清理完毕，共删除 {} 个文件", deletedCount);
     }
 }

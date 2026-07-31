@@ -86,7 +86,7 @@ const route = useRoute()
 const activeMenu = computed(() => route.path)
 const unreadCount = ref(0)
 
-// 初始用账号名兜底，后续异步换成真实姓名
+// 读取账号名
 const getAccountName = () => {
   const stored = localStorage.getItem('username')
   if (stored) return stored
@@ -149,16 +149,15 @@ const logout = () => {
 
 onMounted(() => {
   fetchUnreadCount()
-  // 每分钟轮询一次未读数
   const timer = setInterval(fetchUnreadCount, 60000)
-  // 监听消息已读事件实时刷新红点
+  // 监听消息已读事件
   window.addEventListener('unread-changed', fetchUnreadCount)
-  // 组件卸载时清理定时器和事件监听
+  // 组件卸载时清理资源
   onUnmounted(() => {
     clearInterval(timer)
     window.removeEventListener('unread-changed', fetchUnreadCount)
   })
-  // 异步查询 KYC 实名姓名：若已通过认证则用真实姓名展示
+  // 已通过认证则显示真实姓名
   request.get('/kyc/my').then(res => {
     const profile = res.data
     if (profile && profile.status === 1 && profile.realName) {
@@ -172,8 +171,8 @@ onMounted(() => {
 @import './layout.css';
 
 .menu-custom-badge {
-  background-color: rgba(245, 108, 108, 0.65) !important; /* 提升半透明红不透明度 */
-  color: #ffffff !important; /* 亮白字 */
+    background-color: rgba(245, 108, 108, 0.65) !important;
+    color: #ffffff !important;
   border: 1px solid rgba(245, 108, 108, 0.8);
   border-radius: 10px;
   padding: 0 6px;

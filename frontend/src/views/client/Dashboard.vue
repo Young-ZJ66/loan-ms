@@ -3,7 +3,7 @@
     <div class="header-banner">
       <div class="header-content">
         <h2>个人信用大盘</h2>
-        <p>实时监控您的信用额度、款项占用与分期账单结构</p>
+        <p>查看您的信用额度、额度占用与分期账单</p>
       </div>
       <div class="profile-badge" v-if="profile">
         <span>实名状态：</span>
@@ -35,7 +35,7 @@
             <div class="info">
               <span class="title">当前可用额度 (元)</span>
               <span class="value">
-                <span v-if="credit?.status === 0" class="frozen-text">已风控冻结</span>
+                <span v-if="credit?.status === 0" class="frozen-text">已冻结</span>
                 <span v-else>{{ credit?.availableCredit ? formatMoney(credit.availableCredit) : '0.00' }}</span>
               </span>
             </div>
@@ -87,7 +87,7 @@
         <div class="action-inner">
           <div class="action-desc">
             <h3 class="danger-text">信用账户受限中</h3>
-            <p>检测到您的授信账户处于风控临时锁闭状态，额度已被冻结。若需解除，请提交申诉材料。</p>
+            <p>您的账户已被冻结，如需解冻请提交申诉。</p>
           </div>
           <el-button type="danger" size="large" @click="handleApplyUnfreeze" :loading="unfreezeAppLoading" :disabled="hasUnfreezePending" round>
             <el-icon style="margin-right: 6px;"><Warning /></el-icon>
@@ -124,7 +124,7 @@
           <el-input-number v-model="applyAmount" :min="1000" :max="500000" :step="5000" style="width: 100%" size="large" />
         </el-form-item>
         <p style="font-size: 12px; color: var(--text-secondary); margin-top: 10px; line-height: 1.5;">
-          * 温馨提示：信用管理专员将结合您的当前实名流水与综合征信，对您期望的金额进行最终的审批下发。
+          * 管理员将根据您的资料审批额度。
         </p>
       </el-form>
       <template #footer>
@@ -139,7 +139,7 @@
     <el-dialog v-model="unfreezeDialogVisible" title="提交解冻申诉材料" width="400px" center align-center custom-class="dark-dialog">
       <el-form label-position="top">
         <el-form-item label="详细申诉理由与资产情况说明" required>
-          <el-input type="textarea" v-model="unfreezeReason" placeholder="请认真填写申诉理由，我们将有风控专员介入协同审核。" :rows="4" />
+          <el-input type="textarea" v-model="unfreezeReason" placeholder="请填写解冻申诉理由" :rows="4" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -615,7 +615,7 @@ onMounted(() => {
 :deep(.el-dialog__title) { color: #fff !important; }
 :deep(.el-form-item__label) { color: #cbd5e1 !important; }
 
-/* 页面内红/橙状态或消息提示标签的半透明化覆盖 */
+/* 状态标签半透明化 */
 :deep(.el-tag--danger) {
   background-color: rgba(245, 108, 108, 0.65) !important;
   color: #ffffff !important;

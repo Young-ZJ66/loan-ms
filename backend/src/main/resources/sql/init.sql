@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `loan_application` (
   KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户贷款申请表';
 
--- 5. 还款计划单表(等额本息生成的账单明细)
+-- 5. 还款计划单表
 CREATE TABLE IF NOT EXISTS `repayment_plan` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `loan_id` BIGINT NOT NULL COMMENT '贷款申请ID',
@@ -94,8 +94,8 @@ CREATE TABLE IF NOT EXISTS `repayment_plan` (
   `term_index` INT NOT NULL COMMENT '第几期',
   `principal` DECIMAL(15,2) NOT NULL COMMENT '当期应还本金',
   `interest` DECIMAL(15,2) NOT NULL COMMENT '当期应还利息',
-  `penalty` DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT '逾期产生且未缴清的日滚罚息总计',
-  `total_amount` DECIMAL(15,2) NOT NULL COMMENT '本+息+罚息（应还总计）',
+  `penalty` DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT '逾期罚息',
+  `total_amount` DECIMAL(15,2) NOT NULL COMMENT '应还总额(本金+利息+罚息)',
   `due_date` DATE NOT NULL COMMENT '最迟还款日(不含时分秒)',
   `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-待还, 1-已还清, 2-逾期中',
   `settled_time` DATETIME DEFAULT NULL COMMENT '实际完全结清的时间',
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `repayment_plan` (
 -- 6. 还款流水记录表
 CREATE TABLE IF NOT EXISTS `repayment_record` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `plan_id` BIGINT DEFAULT NULL COMMENT '挂钩的计划ID(如果是针对某一期。如果有提前结清可能挂空或特殊标记)',
+  `plan_id` BIGINT DEFAULT NULL COMMENT '关联还款计划ID',
   `loan_id` BIGINT NOT NULL COMMENT '所属贷款单',
   `user_id` BIGINT NOT NULL,
   `pay_amount` DECIMAL(15,2) NOT NULL COMMENT '实际支付金额',
@@ -129,8 +129,8 @@ CREATE TABLE IF NOT EXISTS `collection_record` (
   `loan_id` BIGINT NOT NULL,
   `user_id` BIGINT NOT NULL COMMENT '被催收人',
   `admin_id` BIGINT NOT NULL COMMENT '执行催收的管理员',
-  `method` VARCHAR(50) NOT NULL COMMENT '催收手段(站内信/电话/法务)',
-  `result` VARCHAR(255) NOT NULL COMMENT '反馈/结果描述',
+  `method` VARCHAR(50) NOT NULL COMMENT '催收方式',
+  `result` VARCHAR(255) NOT NULL COMMENT '结果描述',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_plan_id` (`plan_id`)
@@ -175,17 +175,16 @@ CREATE TABLE IF NOT EXISTS `unfreeze_application` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='解冻申请工单表';
 
 -- -----------------------------------------------------
--- 9. 系统初始数据集
--- 提示: 默认账号初始密码为 123456 (系统以MD5鉴权)
--- MD5: e10adc3949ba59abbe56e057f20f883e
+-- 9. 系统初始数据
+-- 默认账号密码: 123456 (BCrypt加密)
 -- -----------------------------------------------------
 
--- 初始化默认系统账号与用户实体
+-- 默认账号
 REPLACE INTO `sys_user` (`id`, `username`, `password`, `role`) VALUES 
-(1, 'admin', '9c79a54a321d1a75b16af397a27aa783', 1),
-(2, 'user', '9c79a54a321d1a75b16af397a27aa783', 0),
-(3, 'user1', '9c79a54a321d1a75b16af397a27aa783', 0),
-(4, 'user2', '9c79a54a321d1a75b16af397a27aa783', 0);
+(1, 'admin', '$2b$12$i.1jTLVM.JoneMO3nBC54.5/CG9VildzIXsbFx/z/LR2.98ZO16S6', 1),
+(2, 'user1', '$2b$12$no1i4lJkueh7IAHpUG48s.gYrzN0P81qoLC1WtCr7cub5otbzigKy', 0),
+(3, 'user2', '$2b$12$bSAGfEMXZmqsvZ3ykRF4b.aWZCBaB60MmJLiJ4AuKWqF2KB4sMajG', 0),
+(4, 'user3', '$2b$12$ibf2SsGFBLcP5Um.3XmSX.WBli7gBBNQ0KohwCtPQN2wUUoJnsTIy', 0);
 
 -- 已认证用户预置资料
 REPLACE INTO `user_profile` (`user_id`, `real_name`, `id_card`, `id_card_front`, `id_card_back`, `bank_name`, `bank_card`, `phone`, `email`, `status`) VALUES 
@@ -204,22 +203,22 @@ REPLACE INTO `user_credit` (`user_id`, `total_credit`, `used_credit`, `available
 (2, 100000.00, 10000.00, 90000.00, 1),
 (4, 50000.00, 20000.00, 30000.00, 1);
 
--- 8.8 系统预置金融产品列表
+-- 预置产品
 REPLACE INTO `loan_product` (`id`, `name`, `type`, `annual_rate`, `min_amount`, `max_amount`, `min_term`, `max_term`, `description`, `status`) VALUES 
 (1, '惠民消费贷', 0, 0.0480, 1000.00, 50000.00, 3, 12, '面向普通用户的日常消费贷款，下款快，利率低。', 1),
 (2, '尊享经营贷', 1, 0.0380, 50000.00, 500000.00, 6, 36, '服务于小微企业主的专项经营贷款，额度高，期限长。', 1),
 (3, '安居按揭贷', 2, 0.0315, 100000.00, 2000000.00, 12, 360, '支持首套及二套购房的长期限贷款，利率优惠。', 1),
 (4, '车主专享贷', 3, 0.0420, 20000.00, 300000.00, 12, 60, '凭名下车辆办理，额度充足，随借随还。', 1);
 
--- 历史履约中贷款申请(包含产品关联关系)
+-- 已放款贷款申请
 REPLACE INTO `loan_application` (`id`, `user_id`, `product_id`, `amount`, `term_months`, `annual_rate`, `purpose`, `status`) VALUES 
 (1, 2, 1, 10000.00, 3, 0.048, '房屋装修及家电采购', 1);
 
--- 待审批贷款申请档案
+-- 待审批贷款申请
 REPLACE INTO `loan_application` (`id`, `user_id`, `product_id`, `amount`, `term_months`, `annual_rate`, `purpose`, `status`) VALUES 
 (2, 4, 1, 20000.00, 6, 0.048, '进货资金周转', 0);
 
--- 生成默认的等额本息还款计划明细
+-- 等额本息还款计划
 REPLACE INTO `repayment_plan` (`loan_id`, `user_id`, `term_index`, `principal`, `interest`, `penalty`, `total_amount`, `due_date`, `status`) VALUES 
 (1, 2, 1, 3319.46, 40.00, 0, 3359.46, '2026-05-15', 0),
 (1, 2, 2, 3333.58, 25.88, 0, 3359.46, '2026-06-15', 0),

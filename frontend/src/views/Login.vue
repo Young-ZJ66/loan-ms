@@ -15,14 +15,14 @@
         <el-input 
           v-model="form.username" 
           placeholder="请输入账号名称" 
-          :prefix-icon="'User'"
+          :prefix-icon="User"
           size="large">
         </el-input>
         <el-input 
           v-model="form.password" 
           type="password" 
           placeholder="请输入密码" 
-          :prefix-icon="'Lock'"
+          :prefix-icon="Lock"
           size="large"
           show-password>
         </el-input>
@@ -31,7 +31,7 @@
           v-model="form.confirmPassword" 
           type="password" 
           placeholder="请再次确认密码" 
-          :prefix-icon="'Lock'"
+          :prefix-icon="Lock"
           size="large"
           show-password>
         </el-input>
@@ -96,7 +96,7 @@ const handleSubmit = async () => {
             const token = res.data
             localStorage.setItem('token', token)
             
-            // 解析载荷以获取身份分配路由
+            // 解析Token获取角色
             const payload = parseJwt(token)
             localStorage.setItem('role', payload.role)
             localStorage.setItem('username', form.value.username)
@@ -142,7 +142,7 @@ const handleSubmit = async () => {
   overflow: hidden;
 }
 
-/* 动感炫光背景 */
+/* 炫光背景 */
 .login-container::before {
   content: '';
   position: absolute;

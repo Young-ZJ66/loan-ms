@@ -5,8 +5,8 @@
       <p>查看历史账单及进行分期还款</p>
     </div>
 
-    <el-table :data="plans" style="width: 100%" class="custom-table" v-loading="loading">
-      <el-table-column label="合约最后还款日" min-width="150">
+    <el-table :data="pagedPlans" style="width: 100%" class="custom-table" v-loading="loading">
+      <el-table-column label="最后还款日" min-width="150">
         <template #default="scope">
           {{ formatDate(scope.row.dueDate) }}
         </template>
@@ -44,16 +44,24 @@
         </template>
       </el-table-column>
     </el-table>
+    <div class="pagination-wrap">
+      <el-pagination v-model:current-page="currentPage" :page-size="10" :total="plans.length" layout="total, prev, pager, next" background />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const plans = ref([])
+const currentPage = ref(1)
+const pagedPlans = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return plans.value.slice(start, start + 10)
+})
 
 const formatDate = (time) => {
   if (!time) return '-'
@@ -101,7 +109,7 @@ const pay = async (row) => {
     }
     try {
         await request.post('/repayment/pay', null, { params: { planId: row.id, payAmount: row.totalAmount }})
-        ElMessage.success(`第 ${row.termIndex} 期账单核销确认完毕！`)
+        ElMessage.success(`第 ${row.termIndex} 期还款成功！`)
         loadPlans()
     } catch {}
 }
@@ -128,7 +136,7 @@ onMounted(() => loadPlans())
   background-color: rgba(98,106,239,0.3) !important; color: #fff;
 }
 
-/* 页面内账单催还或逾期消息提示标签的半透明化覆盖 */
+/* 状态标签半透明化 */
 :deep(.el-tag--danger) {
   background-color: rgba(245, 108, 108, 0.65) !important;
   color: #ffffff !important;
@@ -140,5 +148,11 @@ onMounted(() => loadPlans())
   color: #ffffff !important;
   border: 1px solid rgba(245, 158, 11, 0.8) !important;
   font-weight: bold;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

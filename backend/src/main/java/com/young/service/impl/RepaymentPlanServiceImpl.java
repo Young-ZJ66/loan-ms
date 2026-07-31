@@ -29,28 +29,25 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
 
     @Override
     public List<RepaymentPlan> getUserPlans(Long userId, Integer status) {
-        // 原生 MyBatis 已在 RepaymentPlanMapper 实现
         return planMapper.selectByUserId(userId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void payNormalInstallment(Long userId, Long planId, BigDecimal payAmount) {
-        // 先通过 selectByUserId 找到该计划，确保 penalty 字段有值
         RepaymentPlan target = planMapper.selectByUserId(userId).stream()
                 .filter(p -> p.getId().equals(planId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("还款账单不存在或无权操作"));
         
-        // 并发及防重保护：已经结清的禁止重复还款
         if (target.getStatus() == 1 || target.getStatus() == 3) {
             throw new RuntimeException("此账单已处于结清状态，严禁重复还款！");
         }
         
-        // 先记录原始逾期状态，再翻转为已结清
+        BigDecimal actualPayAmount = target.getTotalAmount();
+        
         int originalStatus = target.getStatus();
-        target.setStatus(1);  // 1-已结清
-        target.setTotalAmount(payAmount);
+        target.setStatus(1);
         planMapper.updateOverduePlan(target);
         
         // 生成还款流水
@@ -58,19 +55,16 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
         r.setPlanId(planId);
         r.setLoanId(target.getLoanId());
         r.setUserId(userId);
-        r.setPayAmount(payAmount);
-        // 原为逾期中则 payType=2（逾期清欠），否则 payType=1（正常按期还款）
+        r.setPayAmount(actualPayAmount);
         r.setPayType(originalStatus == 2 ? 2 : 1);
         recordMapper.insert(r);
         
-        // 安全拦截：只恢复占用的本金，决不能将利息和罚息加给可用额度
         creditMapper.unfreezeAmount(userId, target.getPrincipal());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void payEarlySettlement(Long userId, Long loanId) {
-        // 水平越权校验：必须保证这笔贷款属于当前操作用户
         LoanApplication loanApp = loanApplicationMapper.selectById(loanId);
         if (loanApp == null || !loanApp.getUserId().equals(userId)) {
             throw new RuntimeException("操作受限：该贷款单不存在或不属于当前用户！");
@@ -82,7 +76,7 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
         
         for (RepaymentPlan p : plans) {
             if (p.getStatus() == 0 || p.getStatus() == 2) {
-                p.setStatus(3); // 3-提前结清
+                p.setStatus(3);
                 planMapper.updateOverduePlan(p);
                 sumTotal = sumTotal.add(p.getTotalAmount());
                 sumPrincipal = sumPrincipal.add(p.getPrincipal());
@@ -94,11 +88,14 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
             r.setLoanId(loanId);
             r.setUserId(userId);
             r.setPayAmount(sumTotal);
-            r.setPayType(3); // 3-提前结清
+            r.setPayType(3);
             recordMapper.insert(r);
             
-            // 同样：恢复授信只需要恢复本金
             creditMapper.unfreezeAmount(userId, sumPrincipal);
         }
+        
+        loanApp.setStatus(3);
+        loanApp.setAuditTime(new java.util.Date());
+        loanApplicationMapper.updateStatus(loanApp);
     }
 }

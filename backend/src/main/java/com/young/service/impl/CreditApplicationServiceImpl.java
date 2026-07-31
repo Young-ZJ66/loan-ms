@@ -75,7 +75,6 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         app.setAuditTime(LocalDateTime.now());
         applicationMapper.update(app);
 
-        // 如果用户以前没借过/没建过额度，则是建额；否则是提额
         UserCredit existCredit = userCreditMapper.selectByUserId(app.getUserId());
         if (existCredit == null) {
             // 首次建额
