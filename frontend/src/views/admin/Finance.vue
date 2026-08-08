@@ -202,7 +202,7 @@ const loadOverduePlans = async () => {
 }
 
 const triggerOverdue = async () => {
-  await request.get('/finance/trigger-overdue')
+  await request.post('/finance/trigger-overdue')
 }
 
 const loadOverdueTab = async () => {

@@ -1,5 +1,6 @@
 package com.young.service.impl;
 
+import com.young.common.BusinessException;
 import com.young.mapper.RepaymentPlanMapper;
 import com.young.mapper.RepaymentRecordMapper;
 import com.young.mapper.UserCreditMapper;
@@ -35,20 +36,24 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void payNormalInstallment(Long userId, Long planId, BigDecimal payAmount) {
-        RepaymentPlan target = planMapper.selectByUserId(userId).stream()
-                .filter(p -> p.getId().equals(planId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("还款账单不存在或无权操作"));
-        
-        if (target.getStatus() == 1 || target.getStatus() == 3) {
-            throw new RuntimeException("此账单已处于结清状态，严禁重复还款！");
+        RepaymentPlan target = planMapper.selectById(planId);
+        if (target == null || !target.getUserId().equals(userId)) {
+            throw new BusinessException("还款账单不存在或无权操作");
         }
         
+        if (target.getStatus() == 1 || target.getStatus() == 3) {
+            throw new BusinessException("此账单已处于结清状态，严禁重复还款！");
+        }
+        
+        // 原子结清：并发下仅有一个请求能成功
+        int affected = planMapper.settlePlan(planId);
+        if (affected == 0) {
+            throw new BusinessException("账单状态已变化，请刷新后重试");
+        }
+
         BigDecimal actualPayAmount = target.getTotalAmount();
         
         int originalStatus = target.getStatus();
-        target.setStatus(1);
-        planMapper.updateOverduePlan(target);
         
         // 生成还款流水
         RepaymentRecord r = new RepaymentRecord();
@@ -67,7 +72,7 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
     public void payEarlySettlement(Long userId, Long loanId) {
         LoanApplication loanApp = loanApplicationMapper.selectById(loanId);
         if (loanApp == null || !loanApp.getUserId().equals(userId)) {
-            throw new RuntimeException("操作受限：该贷款单不存在或不属于当前用户！");
+            throw new BusinessException("操作受限：该贷款单不存在或不属于当前用户！");
         }
 
         List<RepaymentPlan> plans = planMapper.selectByLoanId(loanId);
@@ -76,8 +81,11 @@ public class RepaymentPlanServiceImpl implements RepaymentPlanService {
         
         for (RepaymentPlan p : plans) {
             if (p.getStatus() == 0 || p.getStatus() == 2) {
-                p.setStatus(3);
-                planMapper.updateOverduePlan(p);
+                // 原子标记结清，防并发重复结清
+                int affected = planMapper.settleEarly(p.getId());
+                if (affected == 0) {
+                    continue;
+                }
                 sumTotal = sumTotal.add(p.getTotalAmount());
                 sumPrincipal = sumPrincipal.add(p.getPrincipal());
             }

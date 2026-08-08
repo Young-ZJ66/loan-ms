@@ -1,5 +1,6 @@
 package com.young.service.impl;
 
+import com.young.common.BusinessException;
 import com.young.mapper.CreditApplicationMapper;
 import com.young.mapper.UserCreditMapper;
 import com.young.mapper.UserProfileMapper;
@@ -31,19 +32,19 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
         // 先检查是否实名认证通过
         UserProfile profile = userProfileMapper.selectByUserId(userId);
         if (profile == null || profile.getStatus() != 1) {
-            throw new RuntimeException("操作受限：必须先完成实名认证且经管理员审核通过后，才能发起额度申请！");
+            throw new BusinessException("操作受限：必须先完成实名认证且经管理员审核通过后，才能发起额度申请！");
         }
         
         // 检查是否有在途申请
         CreditApplication pending = applicationMapper.selectLatestPendingByUserId(userId);
         if (pending != null) {
-            throw new RuntimeException("您有一笔申请正在火速核批中，请勿重复提交申请！");
+            throw new BusinessException("您有一笔申请正在火速核批中，请勿重复提交申请！");
         }
         
         // 检查是否已被冻结额度
         UserCredit existCredit = userCreditMapper.selectByUserId(userId);
         if (existCredit != null && existCredit.getStatus() == 0) {
-            throw new RuntimeException("账户已被风控中心冻结，拒绝受理提额申请！");
+            throw new BusinessException("账户已被风控中心冻结，拒绝受理提额申请！");
         }
 
         CreditApplication app = new CreditApplication();
@@ -68,7 +69,7 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
     public void approve(Long applicationId, BigDecimal approveAmount, Long adminId) {
         CreditApplication app = applicationMapper.selectById(applicationId);
         if (app == null || app.getStatus() != 0) {
-            throw new RuntimeException("找不到该申请或状态不在待审态");
+            throw new BusinessException("找不到该申请或状态不在待审态");
         }
 
         app.setStatus(1);
@@ -86,10 +87,17 @@ public class CreditApplicationServiceImpl implements CreditApplicationService {
             userCredit.setStatus(1); // 1-正常
             userCreditMapper.insert(userCredit);
         } else {
-            // 后续提额
+            // 后续提额：可用额度随总额同步调整，但不得为负或超过新总额
             BigDecimal diff = approveAmount.subtract(existCredit.getTotalCredit());
             existCredit.setTotalCredit(approveAmount);
-            existCredit.setAvailableCredit(existCredit.getAvailableCredit().add(diff));
+            BigDecimal newAvailable = existCredit.getAvailableCredit().add(diff);
+            if (newAvailable.compareTo(BigDecimal.ZERO) < 0) {
+                newAvailable = BigDecimal.ZERO;
+            }
+            if (newAvailable.compareTo(approveAmount) > 0) {
+                newAvailable = approveAmount;
+            }
+            existCredit.setAvailableCredit(newAvailable);
             userCreditMapper.updateCredit(existCredit);
         }
     }

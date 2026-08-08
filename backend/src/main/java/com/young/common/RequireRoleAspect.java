@@ -23,7 +23,7 @@ public class RequireRoleAspect {
         int requiredRole = requireRole.role();
 
         if (role == null || role != requiredRole) {
-            throw new BusinessException("权限不足：此操作需要管理员身份");
+            throw new BusinessException(403, "权限不足：此操作需要管理员身份");
         }
 
         return joinPoint.proceed();

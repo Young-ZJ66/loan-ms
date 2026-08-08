@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,7 +49,7 @@ public class FinanceController {
      */
     @Operation(summary = "手动触发逾期清算任务")
     @RequireRole
-    @GetMapping("/trigger-overdue")
+    @PostMapping("/trigger-overdue")
     public Result<String> triggerOverdue() {
         financeService.triggerOverdueScan();
         return Result.success("逾期清算任务已手动触发，请查看控制台日志");

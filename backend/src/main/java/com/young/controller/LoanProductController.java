@@ -1,5 +1,6 @@
 package com.young.controller;
 
+import com.young.common.RequireRole;
 import com.young.common.Result;
 import com.young.pojo.LoanProduct;
 import com.young.service.LoanProductService;
@@ -26,11 +27,9 @@ public class LoanProductController {
      * 查询所有产品（管理端，含下架产品）
      */
     @Operation(summary = "查询全部贷款产品")
+    @RequireRole
     @GetMapping("/all")
-    public Result<List<LoanProduct>> getAll(@RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以访问此接口");
-        }
+    public Result<List<LoanProduct>> getAll() {
         return Result.success(productService.getAllProducts());
     }
 
@@ -47,11 +46,9 @@ public class LoanProductController {
      * 新增贷款产品（管理端）
      */
     @Operation(summary = "新增贷款产品")
+    @RequireRole
     @PostMapping("/add")
-    public Result<?> add(@RequestAttribute("role") Integer role, @RequestBody LoanProduct product) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> add(@RequestBody LoanProduct product) {
         productService.addProduct(product);
         return Result.success("产品创建成功");
     }
@@ -60,11 +57,9 @@ public class LoanProductController {
      * 编辑贷款产品（管理端）
      */
     @Operation(summary = "编辑贷款产品")
+    @RequireRole
     @PutMapping("/update")
-    public Result<?> update(@RequestAttribute("role") Integer role, @RequestBody LoanProduct product) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> update(@RequestBody LoanProduct product) {
         productService.updateProduct(product);
         return Result.success("产品信息已更新");
     }
@@ -73,11 +68,9 @@ public class LoanProductController {
      * 切换产品上下架状态（管理端）
      */
     @Operation(summary = "切换产品上下架状态")
+    @RequireRole
     @PostMapping("/toggle/{id}")
-    public Result<?> toggle(@RequestAttribute("role") Integer role, @PathVariable Long id) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> toggle(@PathVariable Long id) {
         productService.toggleStatus(id);
         return Result.success("产品状态已切换");
     }

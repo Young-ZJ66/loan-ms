@@ -3,6 +3,7 @@ package com.young.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import com.young.common.RequireRole;
 import com.young.common.Result;
 import com.young.pojo.CreditApplication;
 import com.young.service.CreditApplicationService;
@@ -47,11 +48,9 @@ public class CreditApplicationController {
      * [管理端] 获取所有用户的待审批建额/提额请求单
      */
     @Operation(summary = "查询待审批申请列表（管理端）")
+    @RequireRole
     @GetMapping("/pending")
-    public Result<List<CreditApplication>> getPendingList(@RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以访问此接口");
-        }
+    public Result<List<CreditApplication>> getPendingList() {
         return Result.success(applicationService.getPendingList());
     }
 
@@ -59,14 +58,11 @@ public class CreditApplicationController {
      * [管理端] 审批通过并发放最终授信额度（支持管理员修正预期金额）
      */
     @Operation(summary = "审批通过并下发额度")
+    @RequireRole
     @PostMapping("/approve/{id}")
-    public Result<?> approve(@PathVariable Long id, 
-                             @RequestParam BigDecimal approveAmount, 
-                             @RequestAttribute("userId") Long adminId,
-                             @RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> approve(@PathVariable Long id,
+                             @RequestParam BigDecimal approveAmount,
+                             @RequestAttribute("userId") Long adminId) {
         if (approveAmount.compareTo(BigDecimal.ZERO) <= 0) {
             return Result.error("下发额度必须大于0");
         }
@@ -78,13 +74,10 @@ public class CreditApplicationController {
      * [管理端] 驳回提额申请
      */
     @Operation(summary = "驳回提额申请")
+    @RequireRole
     @PostMapping("/reject/{id}")
-    public Result<?> reject(@PathVariable Long id, 
-                            @RequestAttribute("userId") Long adminId,
-                            @RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> reject(@PathVariable Long id,
+                            @RequestAttribute("userId") Long adminId) {
         applicationService.reject(id, adminId);
         return Result.success("提额申请已驳回打回");
     }

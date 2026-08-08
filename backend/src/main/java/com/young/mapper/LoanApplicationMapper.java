@@ -17,6 +17,12 @@ public interface LoanApplicationMapper {
     /** 统计今日新增贷款申请数 */
     int countTodayApplications();
 
+    /** 统计待审批贷款申请数 */
+    int countPending();
+
+    /** 【管理端】查询全部待审批贷款申请（含关联信息） */
+    List<LoanApplication> selectPending();
+
     /** 查询全平台已放款合约的总金额 */
     BigDecimal sumDisbursed();
 

@@ -4,7 +4,6 @@ import com.young.pojo.RepaymentPlan;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 import java.util.Date;
 import java.util.List;
@@ -16,7 +15,23 @@ public interface RepaymentPlanMapper {
     List<RepaymentPlan> selectByLoanId(Long loanId);
     List<RepaymentPlan> selectOverduePlans(Date today);
     int updateOverduePlan(RepaymentPlan plan);
-    
+
+    /** 按主键查询单条还款计划 */
+    RepaymentPlan selectById(Long id);
+
+    /** 原子结清单期账单：仅当状态为待还(0)或逾期(2)时置为已还(1)，返回受影响行数（防并发重复还款） */
+    int settlePlan(@Param("id") Long id);
+
+    /** 原子标记提前结清：仅当状态为待还(0)或逾期(2)时置为结清(3)，返回受影响行数 */
+    int settleEarly(@Param("id") Long id);
+
+    /** 【管理端】查询全平台所有逾期账单（含客户姓名） */
+    List<RepaymentPlan> selectOverdueAll();
+
+    /** 统计逾期账单数量 */
+    @Select("SELECT COUNT(*) FROM repayment_plan WHERE status = 2")
+    int countOverdue();
+
     /** 查询待还且即将到期的账单（用于到期提醒推送） */
     List<RepaymentPlan> selectUpcomingPlans(@Param("fromDate") Date fromDate, @Param("toDate") Date toDate);
     

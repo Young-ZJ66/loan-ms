@@ -3,6 +3,7 @@ package com.young.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import com.young.common.RequireRole;
 import com.young.common.Result;
 import com.young.pojo.UserCredit;
 import com.young.service.UserCreditService;
@@ -32,14 +33,11 @@ public class UserCreditController {
      * [管理端] 调整用户的总授信额度
      */
     @Operation(summary = "调整用户授信总额度")
+    @RequireRole
     @PostMapping("/adjust")
     public Result<?> adjustCredit(@RequestAttribute("userId") Long adminId,
-                                  @RequestAttribute("role") Integer role,
                                   @RequestParam Long targetUserId,
                                   @RequestParam BigDecimal newTotal) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以调整用户授信总额度");
-        }
         creditService.adjustTotalCredit(adminId, targetUserId, newTotal);
         return Result.success("额度调整成功");
     }
@@ -48,14 +46,10 @@ public class UserCreditController {
      * [管理端] 风控冻结用户
      */
     @Operation(summary = "风控冻结用户账户")
+    @RequireRole
     @PostMapping("/freeze/{targetUserId}")
-    public Result<?> freezeCredit(
-            @RequestAttribute("role") Integer role,
-            @PathVariable Long targetUserId, 
-            @RequestParam(required = false) String reason) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行冻结账户操作");
-        }
+    public Result<?> freezeCredit(@PathVariable Long targetUserId,
+                                  @RequestParam(required = false) String reason) {
         creditService.freezeCredit(targetUserId, reason);
         return Result.success("该用户可用额度已被冻结，系统消息已下发");
     }
@@ -64,11 +58,9 @@ public class UserCreditController {
      * [管理端] 解除冻结用户
      */
     @Operation(summary = "解冻用户账户")
+    @RequireRole
     @PostMapping("/unfreeze/{targetUserId}")
-    public Result<?> unfreezeCredit(@RequestAttribute("role") Integer role, @PathVariable Long targetUserId) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行解冻账户操作");
-        }
+    public Result<?> unfreezeCredit(@PathVariable Long targetUserId) {
         creditService.unfreezeCreditAuth(targetUserId);
         return Result.success("账户风控解除！");
     }
@@ -77,11 +69,9 @@ public class UserCreditController {
      * [管理端] 查询全平台所有用户授信情况
      */
     @Operation(summary = "查询全平台用户授信情况")
+    @RequireRole
     @GetMapping("/all")
-    public Result<?> getAllCredits(@RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以访问此接口");
-        }
+    public Result<?> getAllCredits() {
         return Result.success(creditService.getAllCredits());
     }
 }

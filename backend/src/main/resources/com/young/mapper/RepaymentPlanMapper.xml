@@ -22,6 +22,33 @@
         ORDER BY term_index ASC
     </select>
 
+    <select id="selectById" resultType="com.young.pojo.RepaymentPlan">
+        SELECT * FROM repayment_plan 
+        WHERE id = #{id}
+    </select>
+
+    <update id="settlePlan">
+        UPDATE repayment_plan 
+        SET status = 1, settled_time = NOW(), update_time = NOW() 
+        WHERE id = #{id} AND status IN (0, 2)
+    </update>
+
+    <update id="settleEarly">
+        UPDATE repayment_plan 
+        SET status = 3, update_time = NOW() 
+        WHERE id = #{id} AND status IN (0, 2)
+    </update>
+
+    <select id="selectOverdueAll" resultType="com.young.pojo.RepaymentPlan">
+        SELECT 
+            rp.*,
+            COALESCE(up.real_name, CONCAT('UID:', rp.user_id)) AS username
+        FROM repayment_plan rp
+        LEFT JOIN user_profile up ON rp.user_id = up.user_id
+        WHERE rp.status = 2
+        ORDER BY rp.due_date ASC
+    </select>
+
     <select id="selectOverduePlans" resultType="com.young.pojo.RepaymentPlan">
         SELECT * FROM repayment_plan 
         WHERE status IN (0, 2) AND due_date &lt; #{today}

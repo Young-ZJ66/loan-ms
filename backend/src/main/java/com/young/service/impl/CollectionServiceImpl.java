@@ -30,9 +30,7 @@ public class CollectionServiceImpl implements CollectionService {
     @Override
     public List<RepaymentPlan> getOverduePlans() {
         // status=2 的账单即逾期中
-        return planMapper.selectAll().stream()
-                .filter(p -> p.getStatus() == 2)
-                .toList();
+        return planMapper.selectOverdueAll();
     }
 
     @Override
@@ -42,14 +40,16 @@ public class CollectionServiceImpl implements CollectionService {
             throw new BusinessException("催收账单ID不能为空");
         }
         if (method == null || method.isBlank()) {
+            throw new BusinessException("催收方式不能为空");
         }
         if (resultDesc == null || resultDesc.isBlank()) {
+            throw new BusinessException("催收结果描述不能为空");
         }
 
-        RepaymentPlan plan = planMapper.selectAll().stream()
-                .filter(p -> p.getId().equals(planId))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException("找不到该还款计划，请刷新后重试"));
+        RepaymentPlan plan = planMapper.selectById(planId);
+        if (plan == null) {
+            throw new BusinessException("找不到该还款计划，请刷新后重试");
+        }
 
         CollectionRecord record = new CollectionRecord();
         record.setPlanId(planId);

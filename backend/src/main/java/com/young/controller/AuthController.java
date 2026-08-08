@@ -3,6 +3,9 @@ package com.young.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import com.young.common.BusinessException;
+import com.young.common.LoginRateLimiter;
+import com.young.common.RequireRole;
 import com.young.common.Result;
 import com.young.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,8 @@ public class AuthController {
 
     @Autowired
     private SysUserService userService;
+    @Autowired
+    private LoginRateLimiter loginRateLimiter;
 
     @Operation(summary = "用户注册")
     @PostMapping("/register")
@@ -27,7 +32,7 @@ public class AuthController {
         if (username == null || password == null) {
             return Result.error(400, "账号和密码不能为空");
         }
-        Long userId = userService.register(username, password);
+        userService.register(username, password);
         return Result.success("注册成功！");
     }
 
@@ -36,8 +41,20 @@ public class AuthController {
     public Result<String> login(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String password = payload.get("password");
-        String token = userService.login(username, password);
-        return Result.success(token);
+        if (username == null || password == null) {
+            return Result.error(400, "账号和密码不能为空");
+        }
+        if (loginRateLimiter.isBlocked(username)) {
+            return Result.error(429, "登录失败次数过多，请15分钟后再试");
+        }
+        try {
+            String token = userService.login(username, password);
+            loginRateLimiter.reset(username);
+            return Result.success(token);
+        } catch (BusinessException e) {
+            loginRateLimiter.recordFailure(username);
+            throw e;
+        }
     }
 
     @Operation(summary = "修改当前用户密码")
@@ -55,10 +72,9 @@ public class AuthController {
     }
 
     @Operation(summary = "管理员重置用户密码")
+    @RequireRole
     @PostMapping("/admin/reset-password/{userId}")
-    public Result<?> resetPassword(@PathVariable Long userId, @RequestBody Map<String, String> payload, HttpServletRequest request) {
-        Integer role = (Integer) request.getAttribute("role");
-        if (role == null || role != 1) return Result.error(403, "无权限执行此操作");
+    public Result<?> resetPassword(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
         String newPassword = payload.get("newPassword");
         if (newPassword == null) return Result.error(400, "新密码不能为空");
         userService.resetPassword(userId, newPassword);

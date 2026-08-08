@@ -24,4 +24,9 @@ public interface LoanApplicationService {
      * 分主角查询贷款清单 (userId为空则查全部)
      */
     List<LoanApplication> getApplicationList(Long userId);
+
+    /**
+     * 查询全部待审批贷款申请（管理端）
+     */
+    List<LoanApplication> getPendingList();
 }

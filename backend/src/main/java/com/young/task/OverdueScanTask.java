@@ -67,10 +67,7 @@ public class OverdueScanTask {
             LocalDate dueLocal = plan.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             long daysLeft = ChronoUnit.DAYS.between(todayLocal, dueLocal);
             if (daysLeft >= 0 && daysLeft <= 3) {
-                boolean alreadySent = messageMapper.selectByUserId(plan.getUserId()).stream()
-                        .anyMatch(m -> "还款温馨提醒".equals(m.getTitle())
-                                && m.getContent().contains(String.format("第 %d 期还款账单", plan.getTermIndex()))
-                                && m.getContent().contains(dueLocal.toString()));
+                boolean alreadySent = messageMapper.countReminder(plan.getUserId(), plan.getTermIndex(), dueLocal.toString()) > 0;
                 if (alreadySent) {
                     log.info("用户 {} 的第{}期还款账单（到期日 {}）已发送过到期提醒，本次跳过",
                             plan.getUserId(), plan.getTermIndex(), dueLocal);

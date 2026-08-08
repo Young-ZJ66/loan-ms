@@ -52,7 +52,7 @@ public class AdminStatServiceImpl implements AdminStatService {
 
         badges.put("kyc", userProfileMapper.selectPendingList().size());
 
-        int loanCount = (int) loanMapper.selectList(null).stream().filter(l -> l.getStatus() == 0).count();
+        int loanCount = loanMapper.countPending();
         int creditCount = creditApplicationMapper.selectPendingList().size();
         int unfreezeCount = unfreezeApplicationMapper.countPending();
 
@@ -60,7 +60,7 @@ public class AdminStatServiceImpl implements AdminStatService {
         badges.put("credit", creditCount);
         badges.put("unfreeze", unfreezeCount);
 
-        badges.put("overdue", planMapper.selectOverduePlans(new java.util.Date()).size());
+        badges.put("overdue", planMapper.countOverdue());
 
         return badges;
     }

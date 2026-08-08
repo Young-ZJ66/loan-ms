@@ -64,13 +64,15 @@ CREATE DATABASE loan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 2. 执行初始化脚本
 
 ```bash
-# 文件位置：loan-ms/src/main/resources/sql/db_schema.sql
+# 文件位置：backend/src/main/resources/sql/init.sql
 ```
 
 3. 修改数据库连接配置
 
 ```yaml
-# 文件位置：loan-ms/src/main/resources/application.yml
+# 文件位置：backend/src/main/resources/application.yml
+# 建议通过环境变量注入，避免硬编码：
+# DB_URL=jdbc:mysql://localhost:3306/loan  DB_USERNAME=root  DB_PASSWORD=xxx
 spring:
   datasource:
     username: root

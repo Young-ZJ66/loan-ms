@@ -22,4 +22,9 @@ public interface SysMessageMapper {
     
     /** 全部已读 */
     int markAllRead(Long userId);
+
+    /** 查询指定用户的指定期数且指定到期日的还款提醒是否已发送（用于去重） */
+    int countReminder(@Param("userId") Long userId,
+                      @Param("termIndex") Integer termIndex,
+                      @Param("dueDate") String dueDate);
 }

@@ -60,8 +60,15 @@ public class UserCreditServiceImpl implements UserCreditService {
         if (credit != null) {
             BigDecimal diff = newTotal.subtract(credit.getTotalCredit());
             credit.setTotalCredit(newTotal);
-            // 同步放大/缩小可用额度
-            credit.setAvailableCredit(credit.getAvailableCredit().add(diff));
+            // 同步调整可用额度，但不得为负或超过新总额
+            BigDecimal newAvailable = credit.getAvailableCredit().add(diff);
+            if (newAvailable.compareTo(BigDecimal.ZERO) < 0) {
+                newAvailable = BigDecimal.ZERO;
+            }
+            if (newAvailable.compareTo(newTotal) > 0) {
+                newAvailable = newTotal;
+            }
+            credit.setAvailableCredit(newAvailable);
             creditMapper.updateCredit(credit);
         }
     }

@@ -37,6 +37,20 @@
         SELECT COUNT(*) FROM loan_application WHERE DATE(apply_time) = CURDATE()
     </select>
 
+    <select id="countPending" resultType="int">
+        SELECT COUNT(*) FROM loan_application WHERE status = 0
+    </select>
+
+    <select id="selectPending" resultType="com.young.pojo.LoanApplication">
+        SELECT a.*, u.username, p.real_name as realName, pr.name as productName
+        FROM loan_application a
+        LEFT JOIN sys_user u ON a.user_id = u.id
+        LEFT JOIN user_profile p ON a.user_id = p.user_id
+        LEFT JOIN loan_product pr ON a.product_id = pr.id
+        WHERE a.status = 0
+        ORDER BY a.create_time DESC
+    </select>
+
     <!-- 总放款金额：only status=1 的合约 -->
     <select id="sumDisbursed" resultType="java.math.BigDecimal">
         SELECT COALESCE(SUM(amount), 0) FROM loan_application WHERE status = 1

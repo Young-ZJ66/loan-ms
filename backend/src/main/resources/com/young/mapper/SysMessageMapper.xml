@@ -29,4 +29,12 @@
         WHERE to_user_id = #{userId} AND is_read = 0
     </update>
 
+    <select id="countReminder" resultType="int">
+        SELECT COUNT(*) FROM sys_message
+        WHERE to_user_id = #{userId}
+          AND title = '还款温馨提醒'
+          AND content LIKE CONCAT('%第 ', #{termIndex}, ' 期还款账单%')
+          AND content LIKE CONCAT('%', #{dueDate}, '%')
+    </select>
+
 </mapper>

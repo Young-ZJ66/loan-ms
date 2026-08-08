@@ -21,21 +21,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public Result<?> handleBusinessException(BusinessException e) {
         log.warn("[业务异常] {}", e.getMessage());
-        return Result.error(400, e.getMessage() == null ? "操作失败" : e.getMessage());
+        return Result.error(e.getCode(), e.getMessage() == null ? "操作失败" : e.getMessage());
     }
 
     /**
-     * 捕获其他运行时异常
+     * 捕获其他运行时异常：不向客户端泄露内部细节
      */
     @ExceptionHandler(RuntimeException.class)
     public Result<?> handleRuntimeException(RuntimeException e) {
-        log.warn("[运行时异常] {}", e.getMessage());
-        return Result.error(400, e.getMessage() == null ? "操作失败" : e.getMessage());
+        log.warn("[运行时异常] {}", e.getMessage(), e);
+        return Result.error(500, "系统繁忙，请稍后重试");
     }
 
     @ExceptionHandler(Exception.class)
     public Result<?> handleException(Exception e) {
         log.error("系统内部异常: ", e);
-        return Result.error(500, e.getMessage() == null ? "系统内部错误" : e.getMessage());
+        return Result.error(500, "系统内部错误，请稍后重试");
     }
 }

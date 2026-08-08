@@ -3,6 +3,7 @@ package com.young.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import com.young.common.RequireRole;
 import com.young.common.Result;
 import com.young.pojo.LoanApplication;
 import com.young.service.LoanApplicationService;
@@ -33,27 +34,19 @@ public class LoanApplicationController {
      * [管理端] 获取所有待审批的融资申请
      */
     @Operation(summary = "查询待审批贷款列表（管理端）")
+    @RequireRole
     @GetMapping("/pending")
-    public Result<?> listPending(@RequestAttribute("role") Integer role) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以访问此接口");
-        }
-        return Result.success(loanService.getApplicationList(null).stream()
-                .filter(a -> a.getStatus() == 0).toList());
+    public Result<?> listPending() {
+        return Result.success(loanService.getPendingList());
     }
 
     /**
      * [管理端] 审批通过并放款
      */
     @Operation(summary = "审批通过并放款")
+    @RequireRole
     @PostMapping("/approve/{appId}")
-    public Result<?> approveAndDisburse(
-            @RequestAttribute("userId") Long adminId, 
-            @RequestAttribute("role") Integer role, 
-            @PathVariable Long appId) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> approveAndDisburse(@PathVariable Long appId) {
         loanService.approveAndDisburse(appId);
         return Result.success("放款成功，账单计划已自动生成下发");
     }
@@ -62,11 +55,9 @@ public class LoanApplicationController {
      * [管理端] 驳回贷款
      */
     @Operation(summary = "驳回贷款申请")
+    @RequireRole
     @PostMapping("/reject/{appId}")
-    public Result<?> rejectLoan(@RequestAttribute("role") Integer role, @PathVariable Long appId) {
-        if (role == null || role != 1) {
-            return Result.error(403, "权限不足：只有管理员可以执行此操作");
-        }
+    public Result<?> rejectLoan(@PathVariable Long appId) {
         loanService.rejectLoan(appId);
         return Result.success("申请已被驳回");
     }
