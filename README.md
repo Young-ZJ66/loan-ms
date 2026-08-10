@@ -71,10 +71,9 @@ CREATE DATABASE loan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ```yaml
 # 文件位置：backend/src/main/resources/application.yml
-# 建议通过环境变量注入，避免硬编码：
-# DB_URL=jdbc:mysql://localhost:3306/loan  DB_USERNAME=root  DB_PASSWORD=xxx
 spring:
   datasource:
+    url: jdbc:mysql://localhost:3306/loan
     username: root
     password: 1234
 ```
