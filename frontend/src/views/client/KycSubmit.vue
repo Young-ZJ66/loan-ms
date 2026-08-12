@@ -7,7 +7,7 @@
       </div>
 
       <!-- 结果展示区 -->
-      <div v-if="profile && profile.id" class="result-box">
+      <div v-if="profile && !isEditing" class="result-box">
          <el-icon class="icon" :class="profile.status === 1 ? 'success-icon' : (profile.status === 2 ? 'danger-icon' : 'warning-icon')">
             <Warning v-if="profile.status === 0" />
             <CircleCheck v-else-if="profile.status === 1" />
@@ -21,7 +21,7 @@
       </div>
 
       <!-- 填表区 -->
-      <el-form v-else :model="form" :rules="rules" ref="formRef" label-position="top" class="kyc-form">
+      <el-form v-if="!profile || isEditing" :model="form" :rules="rules" ref="formRef" label-position="top" class="kyc-form">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="真实姓名" prop="realName">
@@ -45,7 +45,7 @@
                 :show-file-list="false"
                 :on-success="res => handleSuccess(res, 'idCardFront')"
                 :before-upload="beforeUpload">
-                <img v-if="form.idCardFront" :src="form.idCardFront" class="avatar" />
+                <img v-if="form.idCardFront" :src="fileUrl(form.idCardFront)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <el-icon class="avatar-uploader-icon"><Plus /></el-icon>
                   <p>点击上传</p>
@@ -62,7 +62,7 @@
                 :show-file-list="false"
                 :on-success="res => handleSuccess(res, 'idCardBack')"
                 :before-upload="beforeUpload">
-                <img v-if="form.idCardBack" :src="form.idCardBack" class="avatar" />
+                <img v-if="form.idCardBack" :src="fileUrl(form.idCardBack)" class="avatar" />
                 <div v-else class="upload-placeholder">
                   <el-icon class="avatar-uploader-icon"><Plus /></el-icon>
                   <p>点击上传</p>
@@ -75,12 +75,8 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="开户银行" prop="bankName">
-              <el-select v-model="form.bankName" placeholder="请选择收款银行" size="large" style="width: 100%">
-                <el-option label="中国工商银行" value="中国工商银行" />
-                <el-option label="中国农业银行" value="中国农业银行" />
-                <el-option label="中国建设银行" value="中国建设银行" />
-                <el-option label="招商银行" value="招商银行" />
-                <el-option label="交通银行" value="交通银行" />
+              <el-select v-model="form.bankName" placeholder="请选择收款银行" size="large" style="width: 100%" filterable>
+                <el-option v-for="bank in bankOptions" :key="bank" :label="bank" :value="bank" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -119,9 +115,11 @@ import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 import { Warning, CircleCheck, CircleClose, Plus } from '@element-plus/icons-vue'
+import { fileUrl } from '../../utils/format'
 
 const formRef = ref(null)
 const profile = ref(null)
+const isEditing = ref(false)
 const loading = ref(false)
 const submitting = ref(false)
 
@@ -139,6 +137,110 @@ const form = ref({
   phone: '',
   email: ''
 })
+
+// 银行列表
+const bankOptions = [
+  '中国工商银行',
+  '中国建设银行',
+  '中国农业银行',
+  '中国银行',
+  '招商银行',
+  '交通银行',
+  '中国邮政储蓄银行',
+  '兴业银行',
+  '中信银行',
+  '上海浦东发展银行',
+  '中国民生银行',
+  '中国光大银行',
+  '平安银行',
+  '华夏银行',
+  '北京银行',
+  '广发银行',
+  '江苏银行',
+  '上海银行',
+  '宁波银行',
+  '浙商银行',
+  '南京银行',
+  '重庆农村商业银行',
+  '徽商银行',
+  '上海农商银行',
+  '杭州银行',
+  '恒丰银行',
+  '渤海银行',
+  '北京农商银行',
+  '广州农商银行',
+  '成都银行',
+  '中原银行',
+  '天津银行',
+  '厦门国际银行',
+  '长沙银行',
+  '汇丰银行 (中国)',
+  '贵阳银行',
+  '成都农商银行',
+  '东莞农村商业银行',
+  '深圳农商银行',
+  '微众银行',
+  '重庆银行',
+  '哈尔滨银行',
+  '吉林银行',
+  '广州银行',
+  '贵州银行',
+  '苏州银行',
+  '郑州银行',
+  '江南农村商业银行',
+  '昆仑银行',
+  '齐鲁银行',
+  '东莞银行',
+  '杭州联合银行',
+  '青岛银行',
+  '天津农村商业银行',
+  '桂林银行',
+  '江西银行',
+  '四川银行',
+  '顺德农村商业银行',
+  '湖南银行',
+  '青岛农村商业银行',
+  '九江银行',
+  '河北银行',
+  '浙江泰隆商业银行',
+  '台州银行',
+  '大连银行',
+  '汉口银行',
+  '甘肃银行',
+  '西安银行',
+  '渣打银行 (中国)',
+  '湖北银行',
+  '广西北部湾银行',
+  '兰州银行',
+  '珠海华润银行',
+  '长安银行',
+  '常熟农商银行',
+  '广东南粤银行',
+  '武汉农村商业银行',
+  '广东华兴银行',
+  '南海农商银行',
+  '海南农商银行',
+  '萧山农商银行',
+  '晋商银行',
+  '唐山银行',
+  '威海银行',
+  '浙江稠州商业银行',
+  '三菱日联银行 (中国)',
+  '温州银行',
+  '厦门银行',
+  '网商银行',
+  '三井住友银行 (中国)',
+  '富滇银行',
+  '秦农银行',
+  '瑞穗银行 (中国)',
+  '沧州银行',
+  '东亚银行 (中国)',
+  '山西银行',
+  '日照银行',
+  '潍坊银行',
+  '重庆三峡银行',
+  '蒙商银行'
+]
 
 const rules = {
   realName: [{ required: true, message: '不可为空', trigger: 'blur' }],
@@ -175,6 +277,7 @@ const handleSuccess = (res, field) => {
 const beforeUpload = (file) => {
   const isValid = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp'
   if (!isValid) ElMessage.error('仅仅支持 JPG/PNG/WEBP 图像！')
+  if (file.size > 5*1024*1024) { ElMessage.error('图片大小不能超过5MB'); return false }
   return isValid
 }
 
@@ -186,6 +289,7 @@ const submit = async () => {
       try {
         await request.post('/kyc/submit', form.value)
         ElMessage.success('实名认证资料已提交，等待审核。')
+        isEditing.value = false
         loadData()
       } finally {
         submitting.value = false
@@ -216,7 +320,7 @@ const reSubmit = () => {
       phone: profile.value.phone || '',
       email: profile.value.email || ''
     }
-    profile.value = null
+    isEditing.value = true
   }
 }
 
@@ -257,6 +361,9 @@ onMounted(() => loadData())
 :deep(.el-form-item__label) { color: #cbd5e0 !important; font-weight: bold;}
 :deep(.el-input__wrapper), :deep(.el-select__wrapper) { background: rgba(0,0,0,0.3) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset !important; }
 :deep(.el-input__inner) { color: #fff !important; }
+:deep(.el-select__input) { color: #fff !important; }
+:deep(.el-select__selected-item) { color: #fff !important; }
+:deep(.el-select__selected-item.is-transparent) { color: var(--el-text-color-placeholder) !important; }
 
 .submit-btn { width: 100%; margin-top: 20px; font-weight: bold; border-radius: 8px; }
 

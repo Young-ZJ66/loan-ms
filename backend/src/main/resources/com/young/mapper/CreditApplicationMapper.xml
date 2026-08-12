@@ -9,9 +9,16 @@
     </insert>
 
     <update id="update">
-        UPDATE credit_application 
+        UPDATE credit_application
         SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
         WHERE id = #{id}
+    </update>
+
+    <!-- CAS 更新：仅当当前状态为待审批(0)时才更新，返回受影响行数用于并发抢占 -->
+    <update id="updateStatusIfPending">
+        UPDATE credit_application
+        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
+        WHERE id = #{id} AND status = 0
     </update>
 
     <select id="selectById" resultType="com.young.pojo.CreditApplication">

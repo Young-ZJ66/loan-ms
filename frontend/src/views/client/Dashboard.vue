@@ -153,8 +153,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { init, graphic } from '../../utils/echarts'
 import request from '../../utils/request'
+import { formatMoney } from '../../utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { CreditCard, CircleCheck, PriceTag, Warning, Promotion, Lock } from '@element-plus/icons-vue'
@@ -178,11 +180,6 @@ const unfreezeSubmitting = ref(false)
 
 const billPlans = ref([])
 
-const formatMoney = (val) => {
-    if (val === undefined || val === null) return '0.00'
-    return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
 const loadData = async () => {
   loading.value = true
   try {
@@ -200,6 +197,7 @@ const loadData = async () => {
     nextTick(() => {
       initCharts()
     })
+  } catch (e) {
   } finally {
     loading.value = false
   }
@@ -207,7 +205,6 @@ const loadData = async () => {
 
 let myCharts = []
 const initCharts = () => {
-  if (!window.echarts) return
   myCharts.forEach(c => c.dispose())
   myCharts = []
 
@@ -218,7 +215,7 @@ const initCharts = () => {
 
   const creditDom = document.getElementById('credit-gauge')
   if (creditDom && credit.value) {
-    const creditChart = window.echarts.init(creditDom)
+    const creditChart = init(creditDom)
     const total = credit.value.totalCredit || 0
     const used = credit.value.usedCredit || 0
     const available = credit.value.status === 0 ? 0 : (credit.value.availableCredit || 0)
@@ -257,7 +254,7 @@ const initCharts = () => {
 
   const billDom = document.getElementById('bill-chart')
   if (billDom) {
-    const billChart = window.echarts.init(billDom)
+    const billChart = init(billDom)
     
     const activeBills = billPlans.value.filter(b => b.status === 0 || b.status === 2)
     const terms = activeBills.map(b => `第 ${b.termIndex} 期`)
@@ -298,7 +295,7 @@ const initCharts = () => {
           barWidth: '40%',
           itemStyle: {
             borderRadius: [6, 6, 0, 0],
-            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#6366f1' },
               { offset: 1, color: '#4f46e5' }
             ])
@@ -316,6 +313,12 @@ const initCharts = () => {
 const resizeHandler = () => {
   myCharts.forEach(c => c.resize())
 }
+
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeHandler)
+  myCharts.forEach(c => c.dispose())
+  myCharts = []
+})
 
 const checkPendingStatus = async () => {
   appLoading.value = true

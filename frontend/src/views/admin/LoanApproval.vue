@@ -18,7 +18,7 @@
           </el-table-column>
           <el-table-column prop="username" label="关联账号" min-width="100" />
           <el-table-column prop="realName" label="真实姓名" min-width="100" />
-          <el-table-column prop="amount" label="贷款金额 (元)" min-width="150" />
+          <el-table-column prop="amount" label="贷款金额 (元)" min-width="150" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column prop="termMonths" label="期限" min-width="80">
               <template #default="scope">{{ scope.row.termMonths }} 个月</template>
           </el-table-column>
@@ -52,9 +52,9 @@
           <el-table-column prop="username" label="关联账号" min-width="100" />
           <el-table-column prop="realName" label="真实姓名" min-width="100" />
           <el-table-column prop="idCard" label="身份证" min-width="150">
-             <template #default="scope">{{ (scope.row.idCard || '').substring(0, 14) + '****' }}</template>
+             <template #default="scope">{{ maskIdCard(scope.row.idCard) }}</template>
           </el-table-column>
-          <el-table-column prop="requestedAmount" label="申请额度 (元)" min-width="150" />
+          <el-table-column prop="requestedAmount" label="申请额度 (元)" min-width="150" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column label="申请时间" min-width="160">
             <template #default="scope">{{ formatTime(scope.row.createTime) }}</template>
           </el-table-column>
@@ -164,6 +164,8 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
+import { maskIdCard } from '../../constants'
+import { formatTime, formatMoney } from '../../utils/format'
 
 const activeTab = ref('loan')
 const badges = ref({ kyc: 0, loan: 0, credit: 0, unfreeze: 0, overdue: 0 })
@@ -172,7 +174,7 @@ const fetchBadges = async () => {
   try {
     const res = await request.get('/admin/stat/badges')
     if (res && res.data) badges.value = res.data
-  } catch (e) {}
+  } catch (e) { console.error(e) }
 }
 
 const dispatchRefresh = () => {
@@ -203,13 +205,6 @@ const pagedUnfreezeList = computed(() => {
   const start = (unfreezePage.value - 1) * 10
   return unfreezeList.value.slice(start, start + 10)
 })
-
-const formatTime = (time) => {
-  if (!time) return '-'
-  const d = new Date(time)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 const loadData = async () => {
     loading.value = true
@@ -264,7 +259,7 @@ const auditLoan = async (isPass) => {
         loanDialogVisible.value = false
         loadData()
         dispatchRefresh()
-    } catch {} finally {
+    } catch (e) { console.error(e) } finally {
         loanSubmitting.value = false
     }
 }
@@ -298,7 +293,7 @@ const auditCredit = async (isPass) => {
         creditDialogVisible.value = false
         loadCreditData()
         dispatchRefresh()
-    } catch {} finally {
+    } catch (e) { console.error(e) } finally {
         creditSubmitting.value = false
     }
 }
@@ -323,7 +318,7 @@ const auditUnfreeze = async (isPass) => {
         unfreezeDialogVisible.value = false
         loadUnfreezeData()
         dispatchRefresh()
-    } catch {} finally {
+    } catch (e) { console.error(e) } finally {
         unfreezeSubmitting.value = false
     }
 }

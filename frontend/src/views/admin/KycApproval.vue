@@ -20,32 +20,37 @@
     <el-table :data="pagedList" style="width: 100%" class="custom-table admin-table" v-loading="loading">
       <el-table-column prop="userId" label="用户ID" min-width="100" />
       <el-table-column prop="username" label="账号" min-width="120" />
-      <el-table-column prop="realName" label="真实姓名" min-width="120" />
-      <el-table-column prop="idCard" label="身份证号" min-width="180" />
-      <el-table-column label="申请时间" min-width="160">
+      <el-table-column label="真实姓名" min-width="120">
+        <template #default="scope">{{ scope.row.realName || '-' }}</template>
+      </el-table-column>
+      <el-table-column label="身份证号" min-width="180">
+        <template #default="scope">{{ scope.row.idCard ? maskIdCard(scope.row.idCard) : '-' }}</template>
+      </el-table-column>
+      <el-table-column label="注册时间" min-width="160">
         <template #default="scope">
           {{ formatTime(scope.row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="认证状态" min-width="90">
+      <el-table-column label="认证状态" min-width="100">
         <template #default="scope">
-          <el-tag :type="scope.row.status === 0 ? 'warning' : (scope.row.status === 1 ? 'success' : 'danger')" effect="dark">
+          <el-tag v-if="scope.row.status === null || scope.row.status === undefined" type="info" effect="dark">待提交</el-tag>
+          <el-tag v-else :type="scope.row.status === 0 ? 'warning' : (scope.row.status === 1 ? 'success' : 'danger')" effect="dark">
             {{ scope.row.status === 0 ? '待审批' : (scope.row.status === 1 ? '已通过' : '已驳回') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="授信总额" min-width="90">
+      <el-table-column label="授信总额" min-width="100">
         <template #default="scope">
-          <span v-if="scope.row.credit">{{ scope.row.credit.totalCredit }}</span>
-          <span v-else class="text-gray">-</span>
+          <span v-if="scope.row.credit">{{ formatMoney(scope.row.credit.totalCredit) }}</span>
+          <span v-else>0.00</span>
         </template>
       </el-table-column>
       <el-table-column label="账户状态" min-width="90">
         <template #default="scope">
-          <span v-if="!scope.row.credit">-</span>
-          <el-tag v-else :type="scope.row.credit.status === 1 ? 'success' : 'danger'" effect="dark">
-            {{ scope.row.credit.status === 1 ? '正常' : '已冻结' }}
-          </el-tag>
+          <el-tag v-if="scope.row.status === null || scope.row.status === undefined" type="info" effect="dark">未实名</el-tag>
+          <el-tag v-else-if="scope.row.status === 1 && scope.row.credit && scope.row.credit.status === 0" type="danger" effect="dark">已冻结</el-tag>
+          <el-tag v-else-if="scope.row.status === 1" type="success" effect="dark">正常</el-tag>
+          <el-tag v-else type="warning" effect="dark">未实名</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" min-width="100">
@@ -62,10 +67,13 @@
     <el-dialog v-model="detailVisible" title="客户实名认证详情" width="600px" center custom-class="dark-dialog">
       <div v-if="currentRow" class="detail-container">
         <el-descriptions :column="2" border style="margin-bottom: 20px">
+          <el-descriptions-item label="真实姓名">{{ currentRow.realName || '未填写' }}</el-descriptions-item>
+          <el-descriptions-item label="身份证号">{{ currentRow.idCard || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="开户银行">{{ currentRow.bankName || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="银行卡号">{{ currentRow.bankCard || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="联系电话">{{ currentRow.phone || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="电子邮箱">{{ currentRow.email || '未填写' }}</el-descriptions-item>
+          <el-descriptions-item label="申请时间" :span="2">{{ formatTime(currentRow.createTime) }}</el-descriptions-item>
         </el-descriptions>
         
         <div class="photo-zone">
@@ -73,12 +81,12 @@
             <div class="photo-grid">
               <div class="photo-item">
                 <p>人像面</p>
-                <el-image :src="currentRow.idCardFront" fit="contain" :preview-src-list="[currentRow.idCardFront]" v-if="currentRow.idCardFront"></el-image>
+                <el-image :src="fileUrl(currentRow.idCardFront)" fit="contain" :preview-src-list="[fileUrl(currentRow.idCardFront)]" v-if="currentRow.idCardFront"></el-image>
                 <div v-else class="empty-pic">暂无照片</div>
               </div>
               <div class="photo-item">
                 <p>国徽面</p>
-                <el-image :src="currentRow.idCardBack" fit="contain" :preview-src-list="[currentRow.idCardBack]" v-if="currentRow.idCardBack"></el-image>
+                <el-image :src="fileUrl(currentRow.idCardBack)" fit="contain" :preview-src-list="[fileUrl(currentRow.idCardBack)]" v-if="currentRow.idCardBack"></el-image>
                 <div v-else class="empty-pic">暂无照片</div>
               </div>
             </div>
@@ -136,6 +144,8 @@ import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { maskIdCard } from '../../constants'
+import { formatTime, fileUrl, formatMoney } from '../../utils/format'
 
 const dispatchRefresh = () => window.dispatchEvent(new CustomEvent('fetch-badges'))
 
@@ -165,13 +175,6 @@ const currentRow = ref(null)
 const openDetail = (row) => {
     currentRow.value = row
     detailVisible.value = true
-}
-
-const formatTime = (time) => {
-  if (!time) return '-'
-  const d = new Date(time)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 const adjustVisible = ref(false)
@@ -236,7 +239,7 @@ const unfreeze = async (userId) => {
         detailVisible.value = false
         loadData()
         dispatchRefresh()
-    } catch {}
+    } catch (e) { console.error(e) }
 }
 
 const loadData = async () => {
@@ -270,7 +273,7 @@ const audit = async (id, isPass) => {
         ElMessage.success('审批完成')
         loadData()
         dispatchRefresh()
-    } catch {}
+    } catch (e) { console.error(e) }
 }
 
 const auditAndClose = async (id, isPass) => {
@@ -282,14 +285,14 @@ const resetPwd = (userId) => {
   ElMessageBox.prompt('请输入该用户的新密码', '重置密码', {
     confirmButtonText: '确认重置',
     cancelButtonText: '取消',
-    inputPattern: /.+/,
-    inputErrorMessage: '新密码不能为空',
+    inputPattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/,
+    inputErrorMessage: '密码至少8位且包含字母和数字',
     customClass: 'dark-dialog'
   }).then(async ({ value }) => {
     try {
       await request.post(`/auth/admin/reset-password/${userId}`, { newPassword: value })
       ElMessage.success('密码重置成功')
-    } catch {}
+    } catch (e) { console.error(e) }
   }).catch(() => {})
 }
 

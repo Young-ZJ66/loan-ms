@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '../stores/user'
 
 const routes = [
   {
@@ -36,6 +37,12 @@ const routes = [
       { path: 'finance', name: 'AdminFinance', component: () => import('../views/admin/Finance.vue') },
       { path: 'products', name: 'AdminProducts', component: () => import('../views/admin/ProductManage.vue') }
     ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    meta: { title: '页面不存在' },
+    component: () => import('../views/NotFound.vue')
   }
 ]
 
@@ -45,22 +52,33 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  // 查找匹配路由中最深层的拥有 meta.title 的路由，或者由父级直接覆盖
+  // 查找匹配路由中最深层的拥有 meta.title 的路由
   const title = to.matched.slice().reverse().find(m => m.meta && m.meta.title)?.meta.title || '贷款业务管控系统'
   document.title = title
 
-  const token = localStorage.getItem('token')
-  const roleStr = localStorage.getItem('role')
-  const role = roleStr !== null ? parseInt(roleStr) : null
+  const userStore = useUserStore()
+  const token = userStore.token
+  const role = userStore.role
 
-  // 如果去往登录页，直接放行
+  // 如果去往登录页，已登录用户自动跳转对应首页
   if (to.path === '/login') {
+    if (token && (role === 0 || role === 1)) {
+      next(role === 1 ? '/admin/dashboard' : '/client/dashboard')
+      return
+    }
     next()
     return
   }
 
   // 如果未登录且访问的是受保护路由，重定向到登录页
   if (!token) {
+    next('/login')
+    return
+  }
+
+  // 角色非法则清空登录态并跳登录页，避免无限重定向
+  if (role !== 0 && role !== 1) {
+    userStore.logout()
     next('/login')
     return
   }

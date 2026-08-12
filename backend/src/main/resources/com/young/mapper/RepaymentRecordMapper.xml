@@ -4,10 +4,10 @@
 <mapper namespace="com.young.mapper.RepaymentRecordMapper">
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO repayment_record 
-        (plan_id, loan_id, user_id, pay_amount, pay_time)
-        VALUES 
-        (#{planId}, #{loanId}, #{userId}, #{payAmount}, NOW())
+        INSERT INTO repayment_record
+        (plan_id, loan_id, user_id, pay_amount, pay_type, pay_time)
+        VALUES
+        (#{planId}, #{loanId}, #{userId}, #{payAmount}, #{payType}, NOW())
     </insert>
 
 </mapper>

@@ -56,11 +56,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import request from '../utils/request'
+import { authApi } from '../api'
+import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import { jwtDecode } from 'jwt-decode'
 
 const router = useRouter()
+const userStore = useUserStore()
 const isLogin = ref(true)
 const loading = ref(false)
 
@@ -69,14 +72,6 @@ const form = ref({
   password: '',
   confirmPassword: ''
 })
-
-const parseJwt = (token) => {
-  try {
-    return JSON.parse(atob(token.split('.')[1]))
-  } catch (e) {
-    return null
-  }
-}
 
 const handleSubmit = async () => {
     if (!form.value.username || !form.value.password) {
@@ -92,15 +87,14 @@ const handleSubmit = async () => {
     try {
         if (isLogin.value) {
             // 登录
-            const res = await request.post('/auth/login', form.value)
+            const res = await authApi.login(form.value)
             const token = res.data
-            localStorage.setItem('token', token)
-            
-            // 解析Token获取角色
-            const payload = parseJwt(token)
-            localStorage.setItem('role', payload.role)
-            localStorage.setItem('username', form.value.username)
-            
+            const payload = jwtDecode(token)
+            if (!payload) {
+                ElMessage.error('登录凭证解析失败')
+                return
+            }
+            userStore.setAuth(token, payload.role, form.value.username)
             ElMessage.success('登录成功！欢迎回来~')
             if (payload.role === 1) {
                 router.push('/admin/dashboard')
@@ -108,19 +102,27 @@ const handleSubmit = async () => {
                 router.push('/client/dashboard')
             }
         } else {
-            // 注册成功后直接自动登录
-            await request.post('/auth/register', form.value)
+            // 注册成功后尝试自动登录
+            await authApi.register(form.value)
             ElMessage.success('注册成功！正在自动登录...')
-            const loginRes = await request.post('/auth/login', form.value)
-            const token = loginRes.data
-            localStorage.setItem('token', token)
-            const payload = parseJwt(token)
-            localStorage.setItem('role', payload.role)
-            localStorage.setItem('username', form.value.username)
-            if (payload.role === 1) {
-                router.push('/admin/dashboard')
-            } else {
-                router.push('/client/dashboard')
+            try {
+                const loginRes = await authApi.login(form.value)
+                const token = loginRes.data
+                const payload = jwtDecode(token)
+                if (!payload) {
+                    ElMessage.warning('注册成功，请手动登录')
+                    isLogin.value = true
+                    return
+                }
+                userStore.setAuth(token, payload.role, form.value.username)
+                if (payload.role === 1) {
+                    router.push('/admin/dashboard')
+                } else {
+                    router.push('/client/dashboard')
+                }
+            } catch (e) {
+                ElMessage.warning('注册成功，请手动登录')
+                isLogin.value = true
             }
         }
     } catch (e) {

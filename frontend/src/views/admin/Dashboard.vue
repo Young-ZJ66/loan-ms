@@ -84,8 +84,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { init, graphic } from '../../utils/echarts'
 import request from '../../utils/request'
+import { formatMoney } from '../../utils/format'
 import { useRouter } from 'vue-router'
 import { User, Calendar, Money, Warning, Stamp, Wallet, RefreshRight, Bell, TrendCharts } from '@element-plus/icons-vue'
 
@@ -128,11 +130,6 @@ const todoBadges = computed(() => [
   { name: '逾期催收', value: badges.value.overdue, route: '/admin/finance', icon: Bell }
 ])
 
-const formatMoney = (val) => {
-    if (val === undefined || val === null) return '0.00'
-    return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
 const handleTodoClick = (route) => {
   router.push(route)
 }
@@ -140,8 +137,6 @@ const handleTodoClick = (route) => {
 let charts = []
 
 const initCharts = () => {
-  if (!window.echarts) return
-
   charts.forEach(c => c.dispose())
   charts = []
 
@@ -152,7 +147,7 @@ const initCharts = () => {
 
   const pieDom = document.getElementById('pie-chart')
   if (pieDom) {
-    const pieChart = window.echarts.init(pieDom)
+    const pieChart = init(pieDom)
     const activeLoan = Math.max(0, stats.value.totalDisbursed - stats.value.totalOverdue)
     pieChart.setOption({
       backgroundColor: 'transparent',
@@ -199,7 +194,7 @@ const initCharts = () => {
 
   const roseDom = document.getElementById('rose-chart')
   if (roseDom) {
-    const roseChart = window.echarts.init(roseDom)
+    const roseChart = init(roseDom)
     roseChart.setOption({
       backgroundColor: 'transparent',
       tooltip: {
@@ -237,7 +232,7 @@ const initCharts = () => {
 
   const lineDom = document.getElementById('line-chart')
   if (lineDom) {
-    const lineChart = window.echarts.init(lineDom)
+    const lineChart = init(lineDom)
     // 构建近7日日期标签
     const dateLabels = []
     for(let i=6; i>=0; i--) {
@@ -303,7 +298,7 @@ const initCharts = () => {
           showSymbol: false,
           areaStyle: {
             opacity: 0.1,
-            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#10b981' },
               { offset: 1, color: 'transparent' }
             ])
@@ -318,7 +313,7 @@ const initCharts = () => {
           showSymbol: false,
           areaStyle: {
             opacity: 0.1,
-            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#6366f1' },
               { offset: 1, color: 'transparent' }
             ])
@@ -337,12 +332,18 @@ const resizeCharts = () => {
   charts.forEach(c => c.resize())
 }
 
+onUnmounted(() => {
+  window.removeEventListener('resize', resizeCharts)
+  charts.forEach(c => c.dispose())
+  charts = []
+})
+
 onMounted(async () => {
     loading.value = true
     badgeLoading.value = true
     refreshTime.value = getFormatTime()
     try {
-        const [r1, r2, r3, r4, r5, r6] = await Promise.all([
+        const results = await Promise.allSettled([
             request.get('/admin/stat/overview'),
             request.get('/kyc/pending'),
             request.get('/loan/pending'),
@@ -350,28 +351,30 @@ onMounted(async () => {
             request.get('/admin/stat/product-distribution'),
             request.get('/admin/stat/weekly-trend')
         ])
-        
-        if (r1.code === 200) {
-            stats.value.totalUsers = r1.data.totalUsers
-            stats.value.todayApplications = r1.data.todayApplications
-            stats.value.totalDisbursed = r1.data.totalDisbursed
-            stats.value.totalOverdue = r1.data.totalOverdue
-        }
-        
-        if (r2.data) stats.value.kycPending = r2.data.length
-        if (r3.data) stats.value.loanPending = r3.data.length
 
-        if (r4.code === 200) {
-          badges.value.kyc = r4.data.kyc
-          badges.value.loan = r4.data.loan
-          badges.value.credit = r4.data.credit
-          badges.value.unfreeze = r4.data.unfreeze
-          badges.value.overdue = r4.data.overdue
+        const [r1, r2, r3, r4, r5, r6] = results
+
+        if (r1.status === 'fulfilled' && r1.value.code === 200) {
+            stats.value.totalUsers = r1.value.data.totalUsers
+            stats.value.todayApplications = r1.value.data.todayApplications
+            stats.value.totalDisbursed = r1.value.data.totalDisbursed
+            stats.value.totalOverdue = r1.value.data.totalOverdue
+        }
+
+        if (r2.status === 'fulfilled' && r2.value.data) stats.value.kycPending = r2.value.data.length
+        if (r3.status === 'fulfilled' && r3.value.data) stats.value.loanPending = r3.value.data.length
+
+        if (r4.status === 'fulfilled' && r4.value.code === 200) {
+          badges.value.kyc = r4.value.data.kyc
+          badges.value.loan = r4.value.data.loan
+          badges.value.credit = r4.value.data.credit
+          badges.value.unfreeze = r4.value.data.unfreeze
+          badges.value.overdue = r4.value.data.overdue
         }
 
         // 加载图表数据
-        if (r5.code === 200) productDist.value = r5.data || []
-        if (r6.code === 200) weeklyTrend.value = r6.data || []
+        if (r5.status === 'fulfilled' && r5.value.code === 200) productDist.value = r5.value.data || []
+        if (r6.status === 'fulfilled' && r6.value.code === 200) weeklyTrend.value = r6.value.data || []
 
         nextTick(() => {
           initCharts()

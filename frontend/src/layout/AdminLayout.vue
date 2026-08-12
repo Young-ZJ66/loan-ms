@@ -68,14 +68,14 @@
 
     <!-- 修改密码弹窗 -->
     <el-dialog v-model="pwdVisible" title="修改登录密码" width="400px" custom-class="dark-dialog" append-to-body>
-      <el-form label-position="top">
-        <el-form-item label="原密码" required>
+      <el-form :model="pwdForm" :rules="pwdRules" ref="pwdFormRef" label-position="top">
+        <el-form-item label="原密码" prop="oldPassword">
           <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
         </el-form-item>
-        <el-form-item label="新密码" required>
+        <el-form-item label="新密码" prop="newPassword">
           <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码" />
         </el-form-item>
-        <el-form-item label="确认新密码" required>
+        <el-form-item label="确认新密码" prop="confirmPassword">
           <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
         </el-form-item>
       </el-form>
@@ -89,13 +89,17 @@
 
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { DataLine, Check, Coordinate, Coin, Goods, UserFilled, ArrowDown, SwitchButton, Key } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { authApi } from '../api'
+import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
+import { jwtDecode } from 'jwt-decode'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 const activeMenu = computed(() => route.path)
 
 const badges = ref({ kyc: 0, loan: 0, credit: 0, unfreeze: 0, overdue: 0 })
@@ -108,7 +112,7 @@ const fetchBadges = async () => {
       badges.value = res.data
     }
   } catch (e) {
-    // 忽略未就绪或超时的网络连接错误
+    console.error('fetchBadges error:', e)
   }
 }
 
@@ -123,57 +127,94 @@ onUnmounted(() => {
   window.removeEventListener('fetch-badges', fetchBadges)
 })
 
-// 读取账号名
+// 读取账号名：优先用 store，缺失时从 token 解码并回写
 const getUsername = () => {
-  const stored = localStorage.getItem('username')
-  if (stored) return stored
+  if (userStore.username) return userStore.username
   try {
-    const token = localStorage.getItem('token')
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]))
+    if (userStore.token) {
+      const payload = jwtDecode(userStore.token)
       const name = payload.sub || payload.username || ''
-      if (name) localStorage.setItem('username', name)
+      if (name) userStore.setUsername(name)
       return name
     }
-  } catch {}
+  } catch (e) {}
   return '管理员'
 }
 const username = ref(getUsername())
 
 const pwdVisible = ref(false)
 const pwdLoading = ref(false)
+const pwdFormRef = ref(null)
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdRules = {
+  oldPassword: [
+    { required: true, message: '请输入当前密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 8, message: '密码长度至少8位', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(value)) {
+          callback(new Error('密码必须包含字母和数字'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdForm.value.newPassword) {
+          callback(new Error('两次输入的新密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
 
 const openPwdDialog = () => {
   pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
   pwdVisible.value = true
+  nextTick(() => {
+    pwdFormRef.value?.clearValidate()
+  })
 }
 
 const submitPwd = async () => {
-  if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
-    ElMessage.error('密码不能为空')
-    return
-  }
-  if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
-    ElMessage.error('两次输入的新密码不一致')
+  if (!pwdFormRef.value) return
+  try {
+    await pwdFormRef.value.validate()
+  } catch (e) {
     return
   }
   pwdLoading.value = true
   try {
-    await request.post('/auth/change-password', {
+    await authApi.changePassword({
       oldPassword: pwdForm.value.oldPassword,
       newPassword: pwdForm.value.newPassword
     })
     ElMessage.success('密码修改成功，请重新登录！')
     pwdVisible.value = false
-    logout()
+    await logout()
   } finally {
     pwdLoading.value = false
   }
 }
 
-const logout = () => {
-  localStorage.clear()
+const logout = async () => {
+  try {
+    await authApi.logout()
+  } catch (e) {
+    // 忽略吊销失败，继续清理本地状态
+  }
+  userStore.logout()
   router.push('/login')
 }
 </script>

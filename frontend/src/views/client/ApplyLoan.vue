@@ -18,7 +18,7 @@
           {{ formatTime(scope.row.applyTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="amount" label="贷款金额(元)" min-width="150" />
+      <el-table-column prop="amount" label="贷款金额(元)" min-width="150" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
       <el-table-column prop="termMonths" label="期限(月)" min-width="100" />
       <el-table-column prop="purpose" label="申请说明" />
     <el-table-column prop="productName" label="贷款产品">
@@ -53,7 +53,7 @@
           >
             <div class="p-header">
               <span class="p-name">{{ p.name }}</span>
-              <el-tag :type="p.type === 1 ? 'warning' : (p.type === 2 ? 'success' : (p.type === 3 ? 'danger' : ''))" size="small">{{ ['消费贷','经营贷','房贷','车贷'][p.type] }}</el-tag>
+              <el-tag :type="p.type === 1 ? 'warning' : (p.type === 2 ? 'success' : (p.type === 3 ? 'danger' : ''))" size="small">{{ PRODUCT_TYPE_MAP[p.type]?.label || '未知' }}</el-tag>
             </div>
             <div class="p-rate">年化 {{ (p.annualRate * 100).toFixed(2) }}%</div>
             <div class="p-desc">{{ p.description }}</div>
@@ -101,6 +101,8 @@ import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { formatTime, formatMoney } from '../../utils/format'
+import { PRODUCT_TYPE_MAP } from '../../constants'
 
 const list = ref([])
 const products = ref([])
@@ -119,13 +121,6 @@ const form = ref({
   termMonths: 0,
   purpose: ''
 })
-
-const formatTime = (time) => {
-  if (!time) return '-'
-  const d = new Date(time)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 const loadData = async () => {
     loading.value = true
@@ -160,13 +155,13 @@ const selectProduct = (p) => {
 }
 
 const submit = async () => {
+  if (!form.value.purpose) { ElMessage.error('请填写资金用途'); return }
   submitting.value = true
   try {
     await request.post('/loan/apply', {
         productId: selectedProduct.value.id,
         amount: form.value.amount,
         termMonths: form.value.termMonths,
-        annualRate: selectedProduct.value.annualRate,
         purpose: form.value.purpose
     })
     ElMessage.success('贷款申请已提交，等待审批')

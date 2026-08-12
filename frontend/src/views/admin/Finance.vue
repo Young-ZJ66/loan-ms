@@ -15,14 +15,14 @@
           <el-table-column label="期次" min-width="80">
             <template #default="scope">第 {{ scope.row.termIndex }} 期</template>
           </el-table-column>
-          <el-table-column prop="principal" label="本金(元)" min-width="110" />
-          <el-table-column prop="interest" label="利息(元)" min-width="110" />
+          <el-table-column prop="principal" label="本金(元)" min-width="110" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
+          <el-table-column prop="interest" label="利息(元)" min-width="110" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column label="罚息(元)" min-width="110">
             <template #default="scope">
-              <span :style="{ color: scope.row.penalty > 0 ? '#f56c6c' : 'inherit' }">{{ scope.row.penalty || '0.00' }}</span>
+              <span :style="{ color: scope.row.penalty > 0 ? '#f56c6c' : 'inherit' }">{{ formatMoney(scope.row.penalty) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="totalAmount" label="应还金额(元)" min-width="120" />
+          <el-table-column prop="totalAmount" label="应还金额(元)" min-width="120" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column prop="dueDate" label="最后还款日" min-width="140" sortable>
             <template #default="scope">{{ formatDate(scope.row.dueDate) }}</template>
           </el-table-column>
@@ -44,7 +44,7 @@
           <el-table-column prop="id" label="流水ID" min-width="80" />
           <el-table-column prop="userId" label="用户ID" min-width="80" />
           <el-table-column prop="loanId" label="贷款ID" min-width="80" />
-          <el-table-column prop="payAmount" label="入账金额(元)" min-width="140" />
+          <el-table-column prop="payAmount" label="入账金额(元)" min-width="140" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column label="还款类型" min-width="130">
             <template #default="scope">
               <el-tag :type="scope.row.payType === 1 ? 'success' : (scope.row.payType === 2 ? 'warning' : scope.row.payType === 3 ? 'primary' : 'info')" effect="dark">
@@ -71,7 +71,7 @@
           <el-table-column label="期次" min-width="80">
             <template #default="scope">第 {{ scope.row.termIndex }} 期</template>
           </el-table-column>
-          <el-table-column prop="totalAmount" label="当前应还(含罚息)" min-width="160" />
+          <el-table-column prop="totalAmount" label="当前应还(含罚息)" min-width="160" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
           <el-table-column label="最后还款日" min-width="130">
             <template #default="scope">{{ formatDate(scope.row.dueDate) }}</template>
           </el-table-column>
@@ -121,6 +121,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
+import { formatDate, formatTime, formatMoney } from '../../utils/format'
 
 const activeTab = ref('plans')
 const badges = ref({ kyc: 0, loan: 0, credit: 0, unfreeze: 0, overdue: 0 })
@@ -129,7 +130,7 @@ const fetchBadges = async () => {
   try {
     const res = await request.get('/admin/stat/badges')
     if (res && res.data) badges.value = res.data
-  } catch (e) {}
+  } catch (e) { console.error(e) }
 }
 
 const dispatchRefresh = () => {
@@ -145,20 +146,6 @@ const recordsPage = ref(1)
 const overduePage = ref(1)
 const pagedPlans = computed(() => { const s = (plansPage.value - 1) * 10; return plans.value.slice(s, s + 10) })
 const pagedRecords = computed(() => { const s = (recordsPage.value - 1) * 10; return records.value.slice(s, s + 10) })
-
-const formatDate = (t) => {
-  if (!t) return '-'
-  const d = new Date(t)
-  const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`
-}
-
-const formatTime = (t) => {
-  if (!t) return '-'
-  const d = new Date(t)
-  const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 const getOverdueDays = (dueDate) => {
   if (!dueDate) return 0
@@ -201,7 +188,13 @@ const loadOverduePlans = async () => {
   } finally { loadingOverdue.value = false }
 }
 
+let lastTriggerOverdueTime = 0
+const TRIGGER_OVERDUE_DEBOUNCE_MS = 5 * 60 * 1000
+
 const triggerOverdue = async () => {
+  const now = Date.now()
+  if (now - lastTriggerOverdueTime < TRIGGER_OVERDUE_DEBOUNCE_MS) return
+  lastTriggerOverdueTime = now
   await request.post('/finance/trigger-overdue')
 }
 

@@ -49,8 +49,9 @@ public class UserCreditController {
     @RequireRole
     @PostMapping("/freeze/{targetUserId}")
     public Result<?> freezeCredit(@PathVariable Long targetUserId,
-                                  @RequestParam(required = false) String reason) {
-        creditService.freezeCredit(targetUserId, reason);
+                                  @RequestParam(required = false) String reason,
+                                  @RequestAttribute("userId") Long adminId) {
+        creditService.freezeCredit(targetUserId, reason, adminId);
         return Result.success("该用户可用额度已被冻结，系统消息已下发");
     }
 
@@ -60,8 +61,9 @@ public class UserCreditController {
     @Operation(summary = "解冻用户账户")
     @RequireRole
     @PostMapping("/unfreeze/{targetUserId}")
-    public Result<?> unfreezeCredit(@PathVariable Long targetUserId) {
-        creditService.unfreezeCreditAuth(targetUserId);
+    public Result<?> unfreezeCredit(@PathVariable Long targetUserId,
+                                    @RequestAttribute("userId") Long adminId) {
+        creditService.unfreezeCreditAuth(targetUserId, adminId);
         return Result.success("账户风控解除！");
     }
     

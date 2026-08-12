@@ -48,16 +48,10 @@ import { ref, onMounted } from 'vue'
 import { Bell, CircleCheck } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 import { ElMessage } from 'element-plus'
+import { formatTime } from '../../utils/format'
 
 const messages = ref([])
 const loading = ref(false)
-
-const formatTime = (time) => {
-  if (!time) return '-'
-  const d = new Date(time)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 const loadMessages = async () => {
   loading.value = true
@@ -71,16 +65,25 @@ const loadMessages = async () => {
 
 const readMsg = async (msg) => {
   if (msg.isRead === 1) return
-  await request.put(`/message/read/${msg.id}`)
-  msg.isRead = 1
-  window.dispatchEvent(new CustomEvent('unread-changed'))
+  try {
+    await request.put(`/message/read/${msg.id}`)
+    msg.isRead = 1
+    window.dispatchEvent(new CustomEvent('unread-changed'))
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const markAll = async () => {
-  await request.put('/message/read-all')
-  messages.value.forEach(m => (m.isRead = 1))
-  ElMessage.success('全部已读')
-  window.dispatchEvent(new CustomEvent('unread-changed'))
+  try {
+    await request.put('/message/read-all')
+    messages.value.forEach(m => (m.isRead = 1))
+    ElMessage.success('全部已读')
+    window.dispatchEvent(new CustomEvent('unread-changed'))
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('标记已读失败')
+  }
 }
 
 onMounted(() => loadMessages())

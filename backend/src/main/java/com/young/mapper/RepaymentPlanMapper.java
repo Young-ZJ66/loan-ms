@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface RepaymentPlanMapper {
     int insert(RepaymentPlan plan);
-    List<RepaymentPlan> selectByUserId(Long userId);
+    List<RepaymentPlan> selectByUserId(@Param("userId") Long userId, @Param("status") Integer status);
     List<RepaymentPlan> selectByLoanId(Long loanId);
     List<RepaymentPlan> selectOverduePlans(Date today);
     int updateOverduePlan(RepaymentPlan plan);

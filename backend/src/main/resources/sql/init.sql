@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `repayment_plan` (
   `penalty` DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT '逾期罚息',
   `total_amount` DECIMAL(15,2) NOT NULL COMMENT '应还总额(本金+利息+罚息)',
   `due_date` DATE NOT NULL COMMENT '最迟还款日(不含时分秒)',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-待还, 1-已还清, 2-逾期中',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-待还, 1-已还清, 2-逾期中, 3-提前结清',
   `settled_time` DATETIME DEFAULT NULL COMMENT '实际完全结清的时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

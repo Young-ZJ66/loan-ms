@@ -6,9 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 权限校验注解，标注在 Controller 方法上
+ * 权限校验注解，可标注在 Controller 类或方法上
+ * 方法级注解优先于类级注解；未标注的方法回退到类级默认值
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequireRole {
 

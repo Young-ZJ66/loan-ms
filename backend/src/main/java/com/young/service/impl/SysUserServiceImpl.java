@@ -10,10 +10,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 public class SysUserServiceImpl implements SysUserService {
 
-    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+    // strength=12，提升抗暴力破解能力
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(12);
+
+    // 常见弱口令黑名单
+    private static final Set<String> WEAK_PASSWORDS = Set.of(
+            "password1", "12345678", "abc12345", "11111111", "00000000",
+            "qwerty12", "abcd1234", "admin123", "password", "iloveyou1"
+    );
 
     @Autowired
     private SysUserMapper userMapper;
@@ -94,10 +103,17 @@ public class SysUserServiceImpl implements SysUserService {
         if (password == null || password.length() < 8) {
             throw new BusinessException("密码长度不能少于8位");
         }
+        if (password.length() > 64) {
+            throw new BusinessException("密码长度不能超过64位");
+        }
         boolean hasLetter = password.chars().anyMatch(Character::isLetter);
         boolean hasDigit = password.chars().anyMatch(Character::isDigit);
         if (!hasLetter || !hasDigit) {
             throw new BusinessException("密码必须同时包含字母和数字");
+        }
+        // 弱口令黑名单校验
+        if (WEAK_PASSWORDS.contains(password.toLowerCase())) {
+            throw new BusinessException("密码过于简单，请使用更具复杂度的密码");
         }
     }
 }

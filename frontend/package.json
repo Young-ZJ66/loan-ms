@@ -11,12 +11,22 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.15.0",
+    "echarts": "^6.1.0",
     "element-plus": "^2.13.7",
+    "jwt-decode": "^4.0.0",
+    "pinia": "^3.0.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.5",
     "vite": "^8.0.4"
+  },
+  "overrides": {
+    "@babel/generator": "^7.29.0",
+    "@babel/parser": "^7.29.0",
+    "@babel/types": "^7.29.0",
+    "@babel/helper-string-parser": "^7.29.0",
+    "@babel/helper-validator-identifier": "^7.29.0"
   }
 }

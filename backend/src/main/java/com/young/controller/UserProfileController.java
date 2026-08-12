@@ -51,8 +51,10 @@ public class UserProfileController {
     @Operation(summary = "审批实名认证档案")
     @RequireRole
     @PostMapping("/audit/{id}")
-    public Result<?> audit(@PathVariable Long id, @RequestParam boolean isPass) {
-        profileService.auditKyc(null, id, isPass);
+    public Result<?> audit(@PathVariable Long id,
+                           @RequestParam boolean isPass,
+                           @RequestAttribute("userId") Long adminId) {
+        profileService.auditKyc(adminId, id, isPass);
         return Result.success(isPass ? "实名审核已通过" : "实名审核已驳回");
     }
 }

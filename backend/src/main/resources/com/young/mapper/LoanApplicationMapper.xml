@@ -11,9 +11,16 @@
     </insert>
 
     <update id="updateStatus">
-        UPDATE loan_application 
-        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW() 
+        UPDATE loan_application
+        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
         WHERE id = #{id}
+    </update>
+
+    <!-- CAS 更新：仅当当前状态为待审批(0)时才更新，返回受影响行数用于并发抢占 -->
+    <update id="updateStatusIfPending">
+        UPDATE loan_application
+        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
+        WHERE id = #{id} AND status = 0
     </update>
 
     <select id="selectById" resultType="com.young.pojo.LoanApplication">
@@ -34,7 +41,8 @@
         ORDER BY a.create_time DESC
     </select>
     <select id="countTodayApplications" resultType="int">
-        SELECT COUNT(*) FROM loan_application WHERE DATE(apply_time) = CURDATE()
+        SELECT COUNT(*) FROM loan_application
+        WHERE apply_time >= CURDATE() AND apply_time &lt; CURDATE() + INTERVAL 1 DAY
     </select>
 
     <select id="countPending" resultType="int">

@@ -18,8 +18,8 @@
       <el-table-column prop="name" label="产品名称" min-width="150" />
       <el-table-column label="产品类型" min-width="100">
         <template #default="scope">
-          <el-tag :type="typeTagMap[scope.row.type]?.color" effect="plain">
-            {{ typeTagMap[scope.row.type]?.label || '未知' }}
+          <el-tag :type="PRODUCT_TYPE_MAP[scope.row.type]?.color" effect="plain">
+            {{ PRODUCT_TYPE_MAP[scope.row.type]?.label || '未知' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -109,8 +109,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { PRODUCT_TYPE_MAP } from '../../constants'
 
 const list = ref([])
 const loading = ref(false)
@@ -122,13 +123,6 @@ const pagedList = computed(() => {
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
-
-const typeTagMap = {
-  0: { label: '消费贷', color: '' },
-  1: { label: '经营贷', color: 'warning' },
-  2: { label: '房贷', color: 'success' },
-  3: { label: '车贷', color: 'danger' }
-}
 
 const form = ref({
   id: null,
@@ -210,6 +204,16 @@ const save = async () => {
 }
 
 const toggleStatus = async (id, currentStatus) => {
+  const action = currentStatus === 1 ? '下架' : '上架'
+  try {
+    await ElMessageBox.confirm(`确定要${action}该产品吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  } catch {
+    return
+  }
   await request.post(`/product/toggle/${id}`)
   ElMessage.success(currentStatus === 1 ? '产品已下架' : '产品已上架')
   loadData()

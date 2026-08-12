@@ -4,7 +4,7 @@ import com.young.pojo.UserCredit;
 import java.math.BigDecimal;
 
 public interface UserCreditService {
-    
+
     /**
      * 客户查询自身可用额度
      */
@@ -14,17 +14,17 @@ public interface UserCreditService {
      * 管理员为主体调整（新增/减少）总授信额度
      */
     void adjustTotalCredit(Long adminId, Long targetUserId, BigDecimal newTotal);
-    
+
     /**
      * 管理员风险管控，一键冻结额度使用
      */
-    void freezeCredit(Long targetUserId, String reason);
-    
+    void freezeCredit(Long targetUserId, String reason, Long adminId);
+
     /**
      * 管理员或者系统解除额度冻结
      */
-    void unfreezeCreditAuth(Long targetUserId);
-    
+    void unfreezeCreditAuth(Long targetUserId, Long adminId);
+
     /**
      * 【管理端】查询全平台所有用户的授信情况
      */

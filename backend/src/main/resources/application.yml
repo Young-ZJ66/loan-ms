@@ -18,7 +18,6 @@ spring:
         - classpath:/static/
         - classpath:/public/
         - classpath:/uploads/
-        - file:${user.dir}/uploads/
 
 mybatis:
   mapper-locations: classpath:com/young/mapper/*.xml
@@ -26,12 +25,14 @@ mybatis:
     # 驼峰命名
     map-underscore-to-camel-case: true
 
-uploadDir: file:./uploads/
+# 文件上传存储目录（相对项目根目录，上传接口与静态映射共用）
+upload:
+  dir: ${user.dir}/backend/uploads/
 
 # JWT 认证配置
 jwt:
-  # HS256 签名密钥
-  secret: bXlTdXBlclNlY3JldEtleUZvckpXVFRva2VuMjAyNkF1cmFTeXN0ZW1OZWVkczMyQnl0ZXMhQA==
+  # HS256 签名密钥（测试环境强随机值，生产请通过密钥管理服务注入）
+  secret: dGhpcy1pcy1hLXZlcnktc3Ryb25nLWFuZC1yYW5kb20tc2VjcmV0LWtleS1mb3Itand0LWhzMjU2LWFsZ29yaXRobS1pbi1sb2FuLW1zLXRlc3QtZW52aXJvbm1lbnQ=
 
 # SpringDoc OpenAPI 配置
 springdoc:

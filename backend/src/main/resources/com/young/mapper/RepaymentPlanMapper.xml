@@ -11,8 +11,11 @@
     </insert>
 
     <select id="selectByUserId" resultType="com.young.pojo.RepaymentPlan">
-        SELECT * FROM repayment_plan 
-        WHERE user_id = #{userId} 
+        SELECT * FROM repayment_plan
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
         ORDER BY due_date ASC
     </select>
 
@@ -55,16 +58,17 @@
     </select>
 
     <update id="updateOverduePlan">
-        UPDATE repayment_plan 
-        SET penalty = #{penalty}, 
-            total_amount = #{totalAmount}, 
-            status = #{status} 
-        WHERE id = #{id}
+        UPDATE repayment_plan
+        SET penalty = #{penalty},
+            total_amount = #{totalAmount},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id} AND status IN (0, 2)
     </update>
 
     <select id="selectUpcomingPlans" resultType="com.young.pojo.RepaymentPlan">
-        SELECT * FROM repayment_plan 
-        WHERE status = 0 AND due_date &gt;= #{fromDate} AND due_date &lt; #{toDate}
+        SELECT * FROM repayment_plan
+        WHERE status = 0 AND due_date &gt; #{fromDate} AND due_date &lt; #{toDate}
         ORDER BY due_date ASC
     </select>
 

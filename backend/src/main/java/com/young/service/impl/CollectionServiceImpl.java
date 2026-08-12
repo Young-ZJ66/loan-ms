@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.RoundingMode;
 import java.util.List;
 
 /**
@@ -50,6 +51,10 @@ public class CollectionServiceImpl implements CollectionService {
         if (plan == null) {
             throw new BusinessException("找不到该还款计划，请刷新后重试");
         }
+        // 仅允许对逾期中(status=2)的账单发起催收
+        if (plan.getStatus() == null || plan.getStatus() != 2) {
+            throw new BusinessException("仅可对逾期账单发起催收");
+        }
 
         CollectionRecord record = new CollectionRecord();
         record.setPlanId(planId);
@@ -60,13 +65,14 @@ public class CollectionServiceImpl implements CollectionService {
         record.setResult(resultDesc);
         collectionMapper.insert(record);
 
+        String totalAmountStr = plan.getTotalAmount() != null
+                ? plan.getTotalAmount().setScale(2, RoundingMode.HALF_UP).toPlainString()
+                : "0.00";
         SysMessage msg = new SysMessage();
         msg.setToUserId(plan.getUserId());
         msg.setTitle("逾期催收通知");
-        msg.setContent(String.format(
-                "您的第 %d 期还款账单已逾期，当前应还总额 %.2f 元（含罚息）。" +
-                        "请尽快联系平台处理，催收方式：%s。备注：%s",
-                plan.getTermIndex(), plan.getTotalAmount(), method, resultDesc));
+        msg.setContent("您的第 " + plan.getTermIndex() + " 期还款账单已逾期，当前应还总额 " + totalAmountStr
+                + " 元（含罚息）。请尽快联系平台处理，催收方式：" + method + "。备注：" + resultDesc);
         messageMapper.insert(msg);
     }
 

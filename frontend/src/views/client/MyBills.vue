@@ -14,16 +14,16 @@
       <el-table-column prop="termIndex" label="当前期" min-width="100">
         <template #default="scope">第 {{ scope.row.termIndex }} 期</template>
       </el-table-column>
-      <el-table-column prop="principal" label="本金(元)" />
-      <el-table-column prop="interest" label="利息(元)" />
+      <el-table-column prop="principal" label="本金(元)" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
+      <el-table-column prop="interest" label="利息(元)" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
       <el-table-column label="逾期罚息(元)">
         <template #default="scope">
           <span :style="{ color: scope.row.penalty > 0 ? '#f56c6c' : 'inherit', fontWeight: scope.row.penalty > 0 ? 'bold' : 'normal' }">
-            {{ scope.row.penalty || '0.00' }}
+            {{ formatMoney(scope.row.penalty) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="totalAmount" label="应还总计(元)" />
+      <el-table-column prop="totalAmount" label="应还总计(元)" :formatter="(row, column, cellValue) => formatMoney(cellValue)" />
       <el-table-column label="账单状态" min-width="120">
         <template #default="scope">
           <el-tag :type="scope.row.status === 0 ? 'warning' : (scope.row.status === 1 ? 'success' : 'danger')" effect="dark">
@@ -54,6 +54,7 @@
 import { ref, onMounted, computed } from 'vue'
 import request from '../../utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { formatDate, formatMoney } from '../../utils/format'
 
 const loading = ref(false)
 const plans = ref([])
@@ -62,13 +63,6 @@ const pagedPlans = computed(() => {
   const start = (currentPage.value - 1) * 10
   return plans.value.slice(start, start + 10)
 })
-
-const formatDate = (time) => {
-  if (!time) return '-'
-  const d = new Date(time)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`
-}
 
 const getOverdueDays = (dueDate) => {
   if (!dueDate) return 0
@@ -111,7 +105,9 @@ const pay = async (row) => {
         await request.post('/repayment/pay', null, { params: { planId: row.id, payAmount: row.totalAmount }})
         ElMessage.success(`第 ${row.termIndex} 期还款成功！`)
         loadPlans()
-    } catch {}
+    } catch (e) {
+        console.error(e)
+    }
 }
 
 onMounted(() => loadPlans())

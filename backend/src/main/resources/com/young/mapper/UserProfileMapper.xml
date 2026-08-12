@@ -9,8 +9,18 @@
     </insert>
 
     <update id="update">
-        UPDATE user_profile 
-        SET status = #{status}, audit_time = #{auditTime}, update_time = NOW()
+        UPDATE user_profile
+        SET real_name = #{realName},
+            id_card = #{idCard},
+            id_card_front = #{idCardFront},
+            id_card_back = #{idCardBack},
+            bank_name = #{bankName},
+            bank_card = #{bankCard},
+            phone = #{phone},
+            email = #{email},
+            status = #{status},
+            audit_time = #{auditTime},
+            update_time = NOW()
         WHERE id = #{id}
     </update>
 
@@ -27,10 +37,15 @@
     </select>
 
     <select id="selectAllList" resultType="com.young.pojo.UserProfile">
-        SELECT p.*, u.username
-        FROM user_profile p
-        LEFT JOIN sys_user u ON p.user_id = u.id
-        ORDER BY p.create_time DESC
+        SELECT u.id AS userId, u.username, u.create_time AS createTime,
+               p.id, p.real_name AS realName, p.id_card AS idCard,
+               p.id_card_front AS idCardFront, p.id_card_back AS idCardBack,
+               p.bank_name AS bankName, p.bank_card AS bankCard,
+               p.phone, p.email, p.status, p.audit_time AS auditTime
+        FROM sys_user u
+        LEFT JOIN user_profile p ON u.id = p.user_id
+        WHERE u.role = 0
+        ORDER BY u.id ASC
     </select>
 
 </mapper>

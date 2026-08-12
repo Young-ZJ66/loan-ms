@@ -11,6 +11,8 @@ import java.util.Map;
 public interface LoanApplicationMapper {
     int insert(LoanApplication application);
     int updateStatus(LoanApplication application);
+    /** CAS 更新：仅当当前状态为待审批(0)时才更新，返回受影响行数用于并发抢占 */
+    int updateStatusIfPending(LoanApplication application);
     LoanApplication selectById(Long id);
     List<LoanApplication> selectList(@Param("userId") Long userId);
 
