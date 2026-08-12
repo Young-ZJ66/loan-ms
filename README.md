@@ -8,8 +8,8 @@
 - **框架**: Spring Boot 3.5.13
 - **ORM**: MyBatis 3.0.5
 - **数据库**: MySQL 8.0+
-- **认证**: JWT (jjwt 0.11.5)
-- **密码加密**: BCrypt
+- **认证**: JWT (jjwt 0.11.5，HS256，2h 有效期，支持黑名单吊销)
+- **密码加密**: BCrypt (strength=12)
 - **接口文档**: SpringDoc OpenAPI 2.8.6
 - **AOP**: spring-boot-starter-aop
 - **Java版本**: 17
@@ -18,7 +18,10 @@
 - **框架**: Vue 3.5.32
 - **UI组件库**: Element Plus 2.13.7
 - **路由**: Vue Router 5.0.4
+- **状态管理**: Pinia 3.0.4
 - **HTTP客户端**: Axios 1.15.0
+- **图表库**: ECharts 6.1.0（按需引入）
+- **JWT解析**: jwt-decode 4.0.0
 - **构建工具**: Vite 8.0.4
 
 ## 功能模块
@@ -113,6 +116,8 @@ npm run dev
 | 客户 | user2 | 123456 | 待审核认证 |
 | 客户 | user3 | 123456 | 已认证客户 |
 
+> 注：以上账号为数据库预置的测试账号，可直接登录。新注册用户的密码需满足：长度≥8位、同时包含字母和数字、不在弱口令黑名单中。
+
 ## 项目结构
 
 ```
@@ -137,12 +142,15 @@ loan-ms/
 │   └── pom.xml
 └── frontend/             # 前端项目
     ├── src/
-    │   ├── views/        # 页面组件
-    │   │   ├── admin/    # 管理端页面
-    │   │   └── client/   # 客户端页面
-    │   ├── components/   # 通用组件
+    │   ├── api/          # API 请求模块
+    │   ├── constants/    # 业务常量与脱敏函数
+    │   ├── stores/       # Pinia 状态管理
+    │   ├── layout/       # 布局组件
     │   ├── router/       # 路由配置
-    │   └── utils/        # 工具函数
+    │   ├── utils/        # 工具函数（请求封装、格式化、echarts按需引入）
+    │   └── views/        # 页面组件
+    │       ├── admin/    # 管理端页面
+    │       └── client/   # 客户端页面
     ├── index.html
     └── package.json
 ```
