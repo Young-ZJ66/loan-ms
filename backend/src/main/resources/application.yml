@@ -25,9 +25,10 @@ mybatis:
     # 驼峰命名
     map-underscore-to-camel-case: true
 
-# 文件上传存储目录（相对项目根目录，上传接口与静态映射共用）
+# 文件上传存储目录（相对路径基于后端启动目录，默认在 backend/uploads/）
+# 如需修改，请改为绝对路径或相对启动目录的路径
 upload:
-  dir: ${user.dir}/backend/uploads/
+  dir: uploads/
 
 # JWT 认证配置
 jwt:

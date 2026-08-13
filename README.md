@@ -81,6 +81,21 @@ spring:
     password: 1234
 ```
 
+### 文件上传目录配置
+
+系统上传的证件影像等文件存储在本地磁盘，默认存储路径为 `backend/uploads/`（相对后端启动目录）。
+
+```yaml
+# 文件位置：backend/src/main/resources/application.yml
+upload:
+  dir: uploads/
+```
+
+> **说明**：
+> - 默认配置为相对路径 `uploads/`，请务必在 `backend/` 目录下启动后端，文件将存储在 `backend/uploads/`。
+> - 如需更改存储位置，可修改为绝对路径（如 `D:/loan-ms/uploads/`）或相对启动目录的路径。
+> - 上传接口会在首次上传时自动创建目录，无需手动创建。
+
 ### 后端启动
 
 ```bash
